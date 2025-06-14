@@ -70,9 +70,10 @@ func _process(_delta: float) -> void:
 				_set_place_mode(MODE_WALL)
 
 func try_place_wall_on_side(side: int) -> bool:
-	if not _selected_tile.place_wall_on_side(side): return false
-
 	var next_pos = _selected_pos + _side_dirs[side]
+	if next_pos.x < 0 or next_pos.y < 0 or next_pos.x > _grid_size.x - 1 or next_pos.y > _grid_size.y - 1: return false
+	
+	if not _selected_tile.place_wall_on_side(side): return false
 
 	_grid[next_pos.x][next_pos.y].place_wall_on_side(_get_opposite_side(side))
 
@@ -83,21 +84,6 @@ func try_place_wall_on_side(side: int) -> bool:
 func try_place_counter_at_pos(pos: Vector2i) -> bool:
 	if _grid[pos.x][pos.y] not in _valid_tiles: return false
 	
-	var dir = pos - _selected_pos
-
-	if (dir).length() > 2: return false
-
-	var side: int
-
-	if dir.x == 1:
-		side = SIDE_RIGHT
-	elif dir.x == -1:
-		side = SIDE_LEFT
-	elif dir.y == -1:
-		side = SIDE_TOP
-	else:
-		side = SIDE_BOTTOM
-
 	place_counter_at_pos(pos)
 	return true
 
@@ -147,7 +133,9 @@ func _can_move_to_from(to_pos: Vector2i, from_pos: Vector2i) -> bool:
 	var dir = to_pos - from_pos
 	if dir.length() > 1: return false
 	if to_pos.x > _grid_size.x - 1 or to_pos.y > _grid_size.y - 1: return false
+	if to_pos.x < 0 or to_pos.y < 0: return false
 	if from_pos.x > _grid_size.x - 1 or from_pos.y > _grid_size.y - 1: return false
+	if from_pos.x < 0 or from_pos.y < 0: return false
 	
 	var to = _grid[to_pos.x][to_pos.y]
 	var from = _grid[from_pos.x][from_pos.y]
