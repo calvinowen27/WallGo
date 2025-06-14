@@ -96,7 +96,7 @@ func place_counter_at_pos(pos: Vector2i) -> void:
 	_selected_pos = pos
 
 	$WallButtons.position = _selected_tile.position - Vector2(_tile_size, _tile_size) / 2
-	$WallButtons.show()
+	#$WallButtons.show()
 
 func _on_wall_left_pressed() -> void:
 	try_place_wall_on_side(SIDE_LEFT)
@@ -123,11 +123,25 @@ func _set_place_mode(mode: int) -> void:
 	_mode = mode
 	match mode:
 		MODE_COUNTER:
+			$WallButtons/WallLeft.show()
+			$WallButtons/WallRight.show()
+			$WallButtons/WallTop.show()
+			$WallButtons/WallBottom.show()
+			
 			$WallButtons.hide()
 			highlight_valid_tiles()
 		MODE_WALL:
 			$WallButtons.show()
 			unhighlight_tiles()
+			
+			if _selected_pos.x == 0:
+				$WallButtons/WallLeft.hide()
+			if _selected_pos.x == _grid_size.x - 1:
+				$WallButtons/WallRight.hide()
+			if _selected_pos.y == 0:
+				$WallButtons/WallTop.hide()
+			if _selected_pos.y == _grid_size.y - 1:
+				$WallButtons/WallBottom.hide()
 
 func _can_move_to_from(to_pos: Vector2i, from_pos: Vector2i) -> bool:
 	var dir = to_pos - from_pos
