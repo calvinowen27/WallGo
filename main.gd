@@ -7,8 +7,12 @@ extends Node2D
 @onready var _center: Vector2i = _grid_size * _tile_size / 2 - Vector2(_tile_size / 2, _tile_size / 2)
 @onready var _camera: Camera2D = %Camera2D
 
-var _selected_tile: Tile
-var _selected_pos: Vector2i
+#var _selected_tile: Tile
+#var _selected_pos: Vector2i
+var _selected_tiles: Array[Tile] = [ null, null]
+var _selected_pos: Array[Vector2i] = [ Vector2i.ZERO, Vector2i.ZERO]
+var _player: int = 0
+@export var _player_count: int = 2
 
 var _grid: Array[Array]
 
@@ -57,7 +61,9 @@ func _ready() -> void:
 			_grid[x].append(tile)
 	
 	place_counter_at_pos(_grid_size / 2)
+	_set_place_mode(MODE_COUNTER)
 	
+	place_counter_at_pos(_grid_size / 2 + Vector2i(2, 2))
 	_set_place_mode(MODE_COUNTER)
 
 func _process(_delta: float) -> void:
@@ -70,10 +76,10 @@ func _process(_delta: float) -> void:
 				_set_place_mode(MODE_WALL)
 
 func try_place_wall_on_side(side: int) -> bool:
-	var next_pos = _selected_pos + _side_dirs[side]
+	var next_pos = _selected_pos[_player] + _side_dirs[side]
 	if next_pos.x < 0 or next_pos.y < 0 or next_pos.x > _grid_size.x - 1 or next_pos.y > _grid_size.y - 1: return false
 	
-	if not _selected_tile.place_wall_on_side(side): return false
+	if not _selected_tiles[_player].place_wall_on_side(side): return false
 
 	_grid[next_pos.x][next_pos.y].place_wall_on_side(_get_opposite_side(side))
 
@@ -85,18 +91,18 @@ func try_place_counter_at_pos(pos: Vector2i) -> bool:
 	if _grid[pos.x][pos.y] not in _valid_tiles: return false
 	
 	place_counter_at_pos(pos)
+	
 	return true
 
 func place_counter_at_pos(pos: Vector2i) -> void:
-	if _selected_tile: _selected_tile.remove_counter()
+	if _selected_tiles[_player]: _selected_tiles[_player].remove_counter()
 
 	var tile = _grid[pos.x][pos.y] as Tile
-	tile.place_counter()
-	_selected_tile = tile
-	_selected_pos = pos
+	tile.place_counter(_player)
+	_selected_tiles[_player] = tile
+	_selected_pos[_player] = pos
 
-	$WallButtons.position = _selected_tile.position - Vector2(_tile_size, _tile_size) / 2
-	#$WallButtons.show()
+	$WallButtons.position = _selected_tiles[_player].position - Vector2(_tile_size, _tile_size) / 2
 
 func _on_wall_left_pressed() -> void:
 	try_place_wall_on_side(SIDE_LEFT)
@@ -123,6 +129,8 @@ func _set_place_mode(mode: int) -> void:
 	_mode = mode
 	match mode:
 		MODE_COUNTER:
+			_player = (_player + 1) % _player_count
+			
 			$WallButtons/WallLeft.show()
 			$WallButtons/WallRight.show()
 			$WallButtons/WallTop.show()
@@ -130,17 +138,18 @@ func _set_place_mode(mode: int) -> void:
 			
 			$WallButtons.hide()
 			highlight_valid_tiles()
+			
 		MODE_WALL:
 			$WallButtons.show()
 			unhighlight_tiles()
 			
-			if _selected_pos.x == 0:
+			if _selected_pos[_player].x == 0:
 				$WallButtons/WallLeft.hide()
-			if _selected_pos.x == _grid_size.x - 1:
+			if _selected_pos[_player].x == _grid_size.x - 1:
 				$WallButtons/WallRight.hide()
-			if _selected_pos.y == 0:
+			if _selected_pos[_player].y == 0:
 				$WallButtons/WallTop.hide()
-			if _selected_pos.y == _grid_size.y - 1:
+			if _selected_pos[_player].y == _grid_size.y - 1:
 				$WallButtons/WallBottom.hide()
 
 func _can_move_to_from(to_pos: Vector2i, from_pos: Vector2i) -> bool:
@@ -152,6 +161,9 @@ func _can_move_to_from(to_pos: Vector2i, from_pos: Vector2i) -> bool:
 	if from_pos.x < 0 or from_pos.y < 0: return false
 	
 	var to = _grid[to_pos.x][to_pos.y]
+	
+	if to in _selected_tiles and not to == _selected_tiles[_player]: return false
+	
 	var from = _grid[from_pos.x][from_pos.y]
 	
 	var side = _dir_sides[dir]
@@ -159,7 +171,9 @@ func _can_move_to_from(to_pos: Vector2i, from_pos: Vector2i) -> bool:
 	return not from.has_wall_on_side(side) and not to.has_wall_on_side(_get_opposite_side(side))
 
 func highlight_valid_tiles() -> void:
-	_valid_tiles = [ _selected_tile ]
+	if not _selected_tiles[_player]: return
+	_valid_tiles = [ _selected_tiles[_player] ]
+	
 	var new_valid_tiles = []
 	var checked = []
 	

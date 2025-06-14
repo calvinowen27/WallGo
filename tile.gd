@@ -25,8 +25,11 @@ func init(pos: Vector2, tile_size: float) -> void:
 		SIDE_BOTTOM : false
 	}
 
-func place_counter() -> void:
+func place_counter(player: int) -> void:
 	$Counter.visible = true
+	
+	if player == 1: $Counter.self_modulate = Color.BLUE
+	else: $Counter.self_modulate = Color.WHITE
 
 func remove_counter() -> void:
 	$Counter.visible = false
