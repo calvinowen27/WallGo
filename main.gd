@@ -9,8 +9,9 @@ extends Node2D
 
 #var _selected_tile: Tile
 #var _selected_pos: Vector2i
-var _selected_tiles: Array[Tile] = [ null, null]
-var _selected_pos: Array[Vector2i] = [ Vector2i.ZERO, Vector2i.ZERO]
+var _selected_tiles: Array[Tile] = []
+var _selected_pos: Array[Vector2i] = []
+var _scores: Array[int] = []
 var _player: int = 0
 @export var _player_count: int = 2
 
@@ -46,6 +47,13 @@ var _dir_sides: Dictionary = {
 	Vector2i(-1, 0): SIDE_LEFT
 }
 
+var _adjacent_sides: Dictionary = {
+	SIDE_TOP: [ SIDE_TOP, SIDE_LEFT, SIDE_RIGHT ],
+	SIDE_BOTTOM: [ SIDE_BOTTOM, SIDE_LEFT, SIDE_RIGHT ],
+	SIDE_LEFT: [ SIDE_LEFT, SIDE_TOP, SIDE_BOTTOM ],
+	SIDE_RIGHT: [ SIDE_RIGHT, SIDE_TOP, SIDE_BOTTOM ],
+}
+
 func _ready() -> void:
 	_camera.position = _center
 
@@ -55,16 +63,22 @@ func _ready() -> void:
 		_grid.append([])
 		for y in range(_grid_size.y):
 			var tile = _tile_scene.instantiate()
-			tile.init(Vector2(x, y), _tile_size)
+			tile.init(self, Vector2(x, y), _tile_size)
 			$Tiles.add_child(tile)
 			tile.position = Vector2(x, y) * tile.get_effective_size()
 			_grid[x].append(tile)
 	
-	place_counter_at_pos(_grid_size / 2)
-	_set_place_mode(MODE_COUNTER)
+	for i in range(_player_count):
+		_selected_tiles.append(null)
+		_selected_pos.append(Vector2i.ZERO)
+		_scores.append(0)
 	
-	place_counter_at_pos(_grid_size / 2 + Vector2i(2, 2))
-	_set_place_mode(MODE_COUNTER)
+	for i in range(_player_count):
+		place_counter_at_pos(_grid_size / 2 + Vector2i(i, i))
+		_set_place_mode(MODE_COUNTER)
+	
+	#place_counter_at_pos(_grid_size / 2 + Vector2i(2, 2))
+	#_set_place_mode(MODE_COUNTER)
 
 func _process(_delta: float) -> void:
 	if Input.is_action_just_pressed("click"):
@@ -103,6 +117,13 @@ func place_counter_at_pos(pos: Vector2i) -> void:
 	_selected_pos[_player] = pos
 
 	$WallButtons.position = _selected_tiles[_player].position - Vector2(_tile_size, _tile_size) / 2
+
+	calculate_scores()
+
+func calculate_scores() -> void:
+	pass
+
+	
 
 func _on_wall_left_pressed() -> void:
 	try_place_wall_on_side(SIDE_LEFT)
@@ -143,13 +164,13 @@ func _set_place_mode(mode: int) -> void:
 			$WallButtons.show()
 			unhighlight_tiles()
 			
-			if _selected_pos[_player].x == 0:
+			if _selected_pos[_player].x == 0 or _selected_tiles[_player].has_wall_on_side(SIDE_LEFT):
 				$WallButtons/WallLeft.hide()
-			if _selected_pos[_player].x == _grid_size.x - 1:
+			if _selected_pos[_player].x == _grid_size.x - 1 or _selected_tiles[_player].has_wall_on_side(SIDE_RIGHT):
 				$WallButtons/WallRight.hide()
-			if _selected_pos[_player].y == 0:
+			if _selected_pos[_player].y == 0 or _selected_tiles[_player].has_wall_on_side(SIDE_TOP):
 				$WallButtons/WallTop.hide()
-			if _selected_pos[_player].y == _grid_size.y - 1:
+			if _selected_pos[_player].y == _grid_size.y - 1 or _selected_tiles[_player].has_wall_on_side(SIDE_BOTTOM):
 				$WallButtons/WallBottom.hide()
 
 func _can_move_to_from(to_pos: Vector2i, from_pos: Vector2i) -> bool:
@@ -193,3 +214,6 @@ func highlight_valid_tiles() -> void:
 func unhighlight_tiles() -> void:
 	for tile in _valid_tiles:
 		tile.unhighlight()
+
+func get_grid_size() -> Vector2i:
+	return _grid_size
