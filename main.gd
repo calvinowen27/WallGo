@@ -12,6 +12,8 @@ var _selected_pos: Vector2i
 
 var _grid: Array[Array]
 
+var _valid_tiles: Array
+
 var _mode: int = 0
 
 enum {
@@ -31,6 +33,13 @@ var _side_dirs: Dictionary = {
 	SIDE_BOTTOM: Vector2i(0, 1),
 	SIDE_RIGHT: Vector2i(1, 0),
 	SIDE_LEFT: Vector2i(-1, 0)
+}
+
+var _dir_sides: Dictionary = {
+	Vector2i(0, -1): SIDE_TOP,
+	Vector2i(0, 1): SIDE_BOTTOM,
+	Vector2i(1, 0): SIDE_RIGHT,
+	Vector2i(-1, 0): SIDE_LEFT
 }
 
 func _ready() -> void:
@@ -72,6 +81,8 @@ func try_place_wall_on_side(side: int) -> bool:
 	return true
 
 func try_place_counter_at_pos(pos: Vector2i) -> bool:
+	if _grid[pos.x][pos.y] not in _valid_tiles: return false
+	
 	var dir = pos - _selected_pos
 
 	if (dir).length() > 2: return false
@@ -86,9 +97,6 @@ func try_place_counter_at_pos(pos: Vector2i) -> bool:
 		side = SIDE_TOP
 	else:
 		side = SIDE_BOTTOM
-
-	if _selected_tile.has_wall_on_side(side): return false
-	if _grid[pos.x][pos.y].has_wall_on_side(_get_opposite_side(side)): return false
 
 	place_counter_at_pos(pos)
 	return true
@@ -135,15 +143,37 @@ func _set_place_mode(mode: int) -> void:
 			$WallButtons.show()
 			unhighlight_tiles()
 
+func _can_move_to_from(to_pos: Vector2i, from_pos: Vector2i) -> bool:
+	var dir = to_pos - from_pos
+	if dir.length() > 1: return false
+	if to_pos.x > _grid_size.x - 1 or to_pos.y > _grid_size.y - 1: return false
+	if from_pos.x > _grid_size.x - 1 or from_pos.y > _grid_size.y - 1: return false
+	
+	var to = _grid[to_pos.x][to_pos.y]
+	var from = _grid[from_pos.x][from_pos.y]
+	
+	var side = _dir_sides[dir]
+	
+	return not from.has_wall_on_side(side) and not to.has_wall_on_side(_get_opposite_side(side))
+
 func highlight_valid_tiles() -> void:
-	for dx in range(-2, 3):
-		for dy in range(-2, 3):
-			if Vector2i(dx, dy).length() > 2: continue
-			var tile_pos = _selected_pos + Vector2i(dx, dy)
-			var tile = _grid[tile_pos.x][tile_pos.y]
-			tile.highlight()
+	_valid_tiles = [ _selected_tile ]
+	var new_valid_tiles = []
+	var checked = []
+	
+	for i in range(2):
+		for from_tile in _valid_tiles:
+			if from_tile in checked: continue
+			checked.append(from_tile)
+			for dir in _dir_sides.keys():
+				var to_pos = from_tile.get_grid_pos() + dir
+				if _can_move_to_from(to_pos, from_tile.get_grid_pos()):
+					new_valid_tiles.append(_grid[to_pos.x][to_pos.y])
+		_valid_tiles = new_valid_tiles.duplicate()
+	
+	for tile in _valid_tiles:
+		tile.highlight()
 
 func unhighlight_tiles() -> void:
-	for x in range(_grid_size.x):
-		for y in range(_grid_size.y):
-			_grid[x][y].unhighlight()
+	for tile in _valid_tiles:
+		tile.unhighlight()
