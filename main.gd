@@ -1,0 +1,149 @@
+extends Node2D
+
+@export var _grid_size: Vector2i
+@export var _tile_scene: PackedScene
+@export var _tile_size: float = 16
+
+@onready var _center: Vector2i = _grid_size * _tile_size / 2 - Vector2(_tile_size / 2, _tile_size / 2)
+@onready var _camera: Camera2D = %Camera2D
+
+var _selected_tile: Tile
+var _selected_pos: Vector2i
+
+var _grid: Array[Array]
+
+var _mode: int = 0
+
+enum {
+	SIDE_TOP,
+	SIDE_BOTTOM,
+	SIDE_RIGHT,
+	SIDE_LEFT
+}
+
+enum {
+	MODE_COUNTER,
+	MODE_WALL
+}
+
+var _side_dirs: Dictionary = {
+	SIDE_TOP: Vector2i(0, -1),
+	SIDE_BOTTOM: Vector2i(0, 1),
+	SIDE_RIGHT: Vector2i(1, 0),
+	SIDE_LEFT: Vector2i(-1, 0)
+}
+
+func _ready() -> void:
+	_camera.position = _center
+
+	$WallButtons.size = Vector2(_tile_size, _tile_size)
+
+	for x in range(_grid_size.x):
+		_grid.append([])
+		for y in range(_grid_size.y):
+			var tile = _tile_scene.instantiate()
+			tile.init(Vector2(x, y), _tile_size)
+			$Tiles.add_child(tile)
+			tile.position = Vector2(x, y) * tile.get_effective_size()
+			_grid[x].append(tile)
+	
+	place_counter_at_pos(_grid_size / 2)
+	
+	_set_place_mode(MODE_COUNTER)
+
+func _process(_delta: float) -> void:
+	if Input.is_action_just_pressed("click"):
+		var mouse_pos = get_global_mouse_position() + Vector2(_tile_size / 2, _tile_size / 2)
+		var idx = Vector2i(clamp(mouse_pos.x / _tile_size, 0, _grid_size.x - 1), clamp(mouse_pos.y / _tile_size, 0, _grid_size.y - 1))
+
+		if _mode == MODE_COUNTER:
+			if try_place_counter_at_pos(idx):
+				_set_place_mode(MODE_WALL)
+
+func try_place_wall_on_side(side: int) -> bool:
+	if not _selected_tile.place_wall_on_side(side): return false
+
+	var next_pos = _selected_pos + _side_dirs[side]
+
+	_grid[next_pos.x][next_pos.y].place_wall_on_side(_get_opposite_side(side))
+
+	_set_place_mode(MODE_COUNTER)
+
+	return true
+
+func try_place_counter_at_pos(pos: Vector2i) -> bool:
+	var dir = pos - _selected_pos
+
+	if (dir).length() > 2: return false
+
+	var side: int
+
+	if dir.x == 1:
+		side = SIDE_RIGHT
+	elif dir.x == -1:
+		side = SIDE_LEFT
+	elif dir.y == -1:
+		side = SIDE_TOP
+	else:
+		side = SIDE_BOTTOM
+
+	if _selected_tile.has_wall_on_side(side): return false
+	if _grid[pos.x][pos.y].has_wall_on_side(_get_opposite_side(side)): return false
+
+	place_counter_at_pos(pos)
+	return true
+
+func place_counter_at_pos(pos: Vector2i) -> void:
+	if _selected_tile: _selected_tile.remove_counter()
+
+	var tile = _grid[pos.x][pos.y] as Tile
+	tile.place_counter()
+	_selected_tile = tile
+	_selected_pos = pos
+
+	$WallButtons.position = _selected_tile.position - Vector2(_tile_size, _tile_size) / 2
+	$WallButtons.show()
+
+func _on_wall_left_pressed() -> void:
+	try_place_wall_on_side(SIDE_LEFT)
+
+func _on_wall_right_pressed() -> void:
+	try_place_wall_on_side(SIDE_RIGHT)
+
+func _on_wall_bottom_pressed() -> void:
+	try_place_wall_on_side(SIDE_BOTTOM)
+
+func _on_wall_top_pressed() -> void:
+	try_place_wall_on_side(SIDE_TOP)
+
+func _get_opposite_side(side: int) -> int:
+	match side:
+		SIDE_TOP: return SIDE_BOTTOM
+		SIDE_BOTTOM: return SIDE_TOP
+		SIDE_LEFT: return SIDE_RIGHT
+		SIDE_RIGHT: return SIDE_LEFT
+	
+	return -1
+
+func _set_place_mode(mode: int) -> void:
+	_mode = mode
+	match mode:
+		MODE_COUNTER:
+			$WallButtons.hide()
+			highlight_valid_tiles()
+		MODE_WALL:
+			$WallButtons.show()
+			unhighlight_tiles()
+
+func highlight_valid_tiles() -> void:
+	for dx in range(-2, 3):
+		for dy in range(-2, 3):
+			if Vector2i(dx, dy).length() > 2: continue
+			var tile_pos = _selected_pos + Vector2i(dx, dy)
+			var tile = _grid[tile_pos.x][tile_pos.y]
+			tile.highlight()
+
+func unhighlight_tiles() -> void:
+	for x in range(_grid_size.x):
+		for y in range(_grid_size.y):
+			_grid[x][y].unhighlight()
