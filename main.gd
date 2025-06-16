@@ -97,6 +97,8 @@ func try_place_wall_on_side(side: int) -> bool:
 
 	_grid[next_pos.x][next_pos.y].place_wall_on_side(_get_opposite_side(side))
 
+	calculate_scores()
+	
 	_set_place_mode(MODE_COUNTER)
 
 	return true
@@ -118,12 +120,37 @@ func place_counter_at_pos(pos: Vector2i) -> void:
 
 	$WallButtons.position = _selected_tiles[_player].position - Vector2(_tile_size, _tile_size) / 2
 
-	calculate_scores()
-
 func calculate_scores() -> void:
-	pass
-
+	var shapes = []
 	
+	for player in range(_player_count):
+		var tile = _selected_tiles[player]
+		var tile_in_shape = false
+		for shape in shapes:
+			if tile in shape: tile_in_shape = true
+		
+		if tile_in_shape: continue
+		
+		var shape = [ tile ]
+		var checked = []
+	
+		for from_tile in shape:
+			if from_tile in checked: continue
+			checked.append(from_tile)
+			for dir in _dir_sides.keys():
+				var to_pos = from_tile.get_grid_pos() + dir
+				if not is_pos_in_grid(to_pos): continue
+				if _grid[to_pos.x][to_pos.y] in shape: continue
+				if _can_move_to_from(to_pos, from_tile.get_grid_pos()):
+					shape.append(_grid[to_pos.x][to_pos.y])
+	
+		shapes.append(shape)
+	
+	for shape in shapes:
+		print(shape.size())
+
+func is_pos_in_grid(pos: Vector2i) -> bool:
+	return pos.x >= 0 and pos.y >= 0 and pos.x < _grid_size.x and pos.y < _grid_size.y
 
 func _on_wall_left_pressed() -> void:
 	try_place_wall_on_side(SIDE_LEFT)
