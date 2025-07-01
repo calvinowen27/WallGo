@@ -58,6 +58,12 @@ anchor_right = 0.95
 anchor_bottom = 0.1
 metadata/_edit_use_anchors_ = true
 
+[node name="EndText" type="Label" parent="."]
+visible = false
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Game Over"
+
 [connection signal="pressed" from="WallButtons/WallLeft" to="." method="_on_wall_left_pressed"]
 [connection signal="pressed" from="WallButtons/WallRight" to="." method="_on_wall_right_pressed"]
 [connection signal="pressed" from="WallButtons/WallBottom" to="." method="_on_wall_bottom_pressed"]

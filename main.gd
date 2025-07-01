@@ -77,6 +77,8 @@ func _ready() -> void:
 		place_counter_at_pos(_grid_size / 2 + Vector2i(i, i))
 		_set_place_mode(MODE_COUNTER)
 	
+	$EndText.position = _camera.position
+	
 	#place_counter_at_pos(_grid_size / 2 + Vector2i(2, 2))
 	#_set_place_mode(MODE_COUNTER)
 
@@ -129,7 +131,8 @@ func calculate_scores() -> void:
 		for shape in shapes:
 			if tile in shape: tile_in_shape = true
 		
-		if tile_in_shape: continue
+		if tile_in_shape:
+			continue
 		
 		var shape = [ tile ]
 		var checked = []
@@ -148,6 +151,8 @@ func calculate_scores() -> void:
 	
 	for shape in shapes:
 		print(shape.size())
+	
+	if shapes.size() == _player_count: $EndText.show()
 
 func is_pos_in_grid(pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.y >= 0 and pos.x < _grid_size.x and pos.y < _grid_size.y
@@ -210,7 +215,7 @@ func _can_move_to_from(to_pos: Vector2i, from_pos: Vector2i) -> bool:
 	
 	var to = _grid[to_pos.x][to_pos.y]
 	
-	if to in _selected_tiles and not to == _selected_tiles[_player]: return false
+	#if to in _selected_tiles and not to == _selected_tiles[_player]: return false
 	
 	var from = _grid[from_pos.x][from_pos.y]
 	
@@ -232,7 +237,10 @@ func highlight_valid_tiles() -> void:
 			for dir in _dir_sides.keys():
 				var to_pos = from_tile.get_grid_pos() + dir
 				if _can_move_to_from(to_pos, from_tile.get_grid_pos()):
-					new_valid_tiles.append(_grid[to_pos.x][to_pos.y])
+					var to = _grid[to_pos.x][to_pos.y]
+					
+					if to not in _selected_tiles or to == _selected_tiles[_player]:
+						new_valid_tiles.append(_grid[to_pos.x][to_pos.y])
 		_valid_tiles = new_valid_tiles.duplicate()
 	
 	for tile in _valid_tiles:
