@@ -1,0 +1,70 @@
+[gd_scene load_steps=3 format=3 uid="uid://bckqmor3a6nl2"]
+
+[ext_resource type="Script" path="res://main.gd" id="1_6011u"]
+[ext_resource type="PackedScene" uid="uid://be07t3wys0ugv" path="res://tile.tscn" id="2_e77ha"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_6011u")
+_grid_size = Vector2i(7, 7)
+_tile_scene = ExtResource("2_e77ha")
+_tile_size = 40.0
+
+[node name="Camera2D" type="Camera2D" parent="."]
+unique_name_in_owner = true
+zoom = Vector2(3, 3)
+
+[node name="Tiles" type="Node2D" parent="."]
+
+[node name="WallButtons" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 120.0
+offset_top = 120.0
+offset_right = 160.0
+offset_bottom = 160.0
+
+[node name="WallLeft" type="Button" parent="WallButtons"]
+layout_mode = 0
+anchor_left = -0.1
+anchor_top = 0.075
+anchor_right = 0.1
+anchor_bottom = 0.925
+metadata/_edit_use_anchors_ = true
+
+[node name="WallRight" type="Button" parent="WallButtons"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.9
+anchor_top = 0.075
+anchor_right = 1.1
+anchor_bottom = 0.925
+metadata/_edit_use_anchors_ = true
+
+[node name="WallBottom" type="Button" parent="WallButtons"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.05
+anchor_top = 0.9
+anchor_right = 0.95
+anchor_bottom = 1.1
+metadata/_edit_use_anchors_ = true
+
+[node name="WallTop" type="Button" parent="WallButtons"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.05
+anchor_top = -0.1
+anchor_right = 0.95
+anchor_bottom = 0.1
+metadata/_edit_use_anchors_ = true
+
+[node name="EndText" type="Label" parent="."]
+visible = false
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Game Over"
+
+[connection signal="pressed" from="WallButtons/WallLeft" to="." method="_on_wall_left_pressed"]
+[connection signal="pressed" from="WallButtons/WallRight" to="." method="_on_wall_right_pressed"]
+[connection signal="pressed" from="WallButtons/WallBottom" to="." method="_on_wall_bottom_pressed"]
+[connection signal="pressed" from="WallButtons/WallTop" to="." method="_on_wall_top_pressed"]

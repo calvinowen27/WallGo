@@ -7,19 +7,18 @@ extends Node2D
 @onready var _center: Vector2i = _grid_size * _tile_size / 2 - Vector2(_tile_size / 2, _tile_size / 2)
 @onready var _camera: Camera2D = %Camera2D
 
-#var _selected_tile: Tile
-#var _selected_pos: Vector2i
-var _selected_tiles: Array[Tile] = []
-var _selected_pos: Array[Vector2i] = []
-var _scores: Array[int] = []
-var _player: int = 0
-@export var _player_count: int = 2
+#var _selected_tiles: Array[Tile] = []
+#var _selected_pos: Array[Vector2i] = []
+#var _player: int = 0
+#@export var _player_count: int = 2
+#
+#var _grid: Array[Array]
+#
+#var _valid_tiles: Array
+#
+#var _mode: int = 0
 
-var _grid: Array[Array]
-
-var _valid_tiles: Array
-
-var _mode: int = 0
+var _game_state: GameState
 
 enum {
 	SIDE_TOP,
@@ -59,21 +58,21 @@ func _ready() -> void:
 
 	$WallButtons.size = Vector2(_tile_size, _tile_size)
 
+	_game_state = GameState.new()
+	var grid = _game_state.get_grid()
 	for x in range(_grid_size.x):
-		_grid.append([])
+		grid.append([])
 		for y in range(_grid_size.y):
 			var tile = _tile_scene.instantiate()
 			tile.init(self, Vector2(x, y), _tile_size)
 			$Tiles.add_child(tile)
 			tile.position = Vector2(x, y) * tile.get_effective_size()
-			_grid[x].append(tile)
+			grid[x].append(tile)
 	
-	for i in range(_player_count):
-		_selected_tiles.append(null)
-		_selected_pos.append(Vector2i.ZERO)
-		_scores.append(0)
+	for i in range(_game_state.get_player_count()):
+		_game_state.select_tile(-1, Vector2i.ZERO)
 	
-	for i in range(_player_count):
+	for i in range(_game_state.get_player_count()):
 		place_counter_at_pos(_grid_size / 2 + Vector2i(i, i))
 		_set_place_mode(MODE_COUNTER)
 	
@@ -87,17 +86,17 @@ func _process(_delta: float) -> void:
 		var mouse_pos = get_global_mouse_position() + Vector2(_tile_size / 2, _tile_size / 2)
 		var idx = Vector2i(clamp(mouse_pos.x / _tile_size, 0, _grid_size.x - 1), clamp(mouse_pos.y / _tile_size, 0, _grid_size.y - 1))
 
-		if _mode == MODE_COUNTER:
+		if _game_state.get_mode() == MODE_COUNTER:
 			if try_place_counter_at_pos(idx):
 				_set_place_mode(MODE_WALL)
 
 func try_place_wall_on_side(side: int) -> bool:
-	var next_pos = _selected_pos[_player] + _side_dirs[side]
+	var next_pos = _game_state.get_player_selected_pos() + _side_dirs[side]
 	if next_pos.x < 0 or next_pos.y < 0 or next_pos.x > _grid_size.x - 1 or next_pos.y > _grid_size.y - 1: return false
 	
-	if not _selected_tiles[_player].place_wall_on_side(side): return false
+	if not _game_state.get_player_selected_tile().place_wall_on_side(side): return false
 
-	_grid[next_pos.x][next_pos.y].place_wall_on_side(_get_opposite_side(side))
+	_game_state.get_tile(next_pos).place_wall_on_side(_get_opposite_side(side))
 
 	calculate_scores()
 	
@@ -106,27 +105,26 @@ func try_place_wall_on_side(side: int) -> bool:
 	return true
 
 func try_place_counter_at_pos(pos: Vector2i) -> bool:
-	if _grid[pos.x][pos.y] not in _valid_tiles: return false
+	if not _game_state.tile_at_pos_valid(pos): return false
 	
 	place_counter_at_pos(pos)
 	
 	return true
 
 func place_counter_at_pos(pos: Vector2i) -> void:
-	if _selected_tiles[_player]: _selected_tiles[_player].remove_counter()
+	if _game_state.get_player_selected_tile(): _game_state.get_player_selected_tile().remove_counter()
 
-	var tile = _grid[pos.x][pos.y] as Tile
-	tile.place_counter(_player)
-	_selected_tiles[_player] = tile
-	_selected_pos[_player] = pos
+	var tile = _game_state.get_tile(pos) as Tile
+	tile.place_counter(_game_state.get_player())
+	_game_state.select_player_tile(tile.get_grid_pos())
 
-	$WallButtons.position = _selected_tiles[_player].position - Vector2(_tile_size, _tile_size) / 2
+	$WallButtons.position = _game_state.get_player_selected_tile().position - Vector2(_tile_size, _tile_size) / 2
 
 func calculate_scores() -> void:
 	var shapes = []
 	
-	for player in range(_player_count):
-		var tile = _selected_tiles[player]
+	for player in range(_game_state.get_player_count()):
+		var tile = _game_state.get_player_selected_tile()
 		var tile_in_shape = false
 		for shape in shapes:
 			if tile in shape: tile_in_shape = true
@@ -143,16 +141,16 @@ func calculate_scores() -> void:
 			for dir in _dir_sides.keys():
 				var to_pos = from_tile.get_grid_pos() + dir
 				if not is_pos_in_grid(to_pos): continue
-				if _grid[to_pos.x][to_pos.y] in shape: continue
+				if _game_state.get_tile(to_pos) in shape: continue
 				if _can_move_to_from(to_pos, from_tile.get_grid_pos()):
-					shape.append(_grid[to_pos.x][to_pos.y])
+					shape.append(_game_state.get_tile(to_pos))
 	
 		shapes.append(shape)
 	
 	for shape in shapes:
 		print(shape.size())
 	
-	if shapes.size() == _player_count: $EndText.show()
+	if shapes.size() == _game_state.get_player_count(): $EndText.show()
 
 func is_pos_in_grid(pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.y >= 0 and pos.x < _grid_size.x and pos.y < _grid_size.y
@@ -179,10 +177,10 @@ func _get_opposite_side(side: int) -> int:
 	return -1
 
 func _set_place_mode(mode: int) -> void:
-	_mode = mode
+	_game_state.set_mode(mode)
 	match mode:
 		MODE_COUNTER:
-			_player = (_player + 1) % _player_count
+			_game_state.next_player()
 			
 			$WallButtons/WallLeft.show()
 			$WallButtons/WallRight.show()
@@ -196,13 +194,16 @@ func _set_place_mode(mode: int) -> void:
 			$WallButtons.show()
 			unhighlight_tiles()
 			
-			if _selected_pos[_player].x == 0 or _selected_tiles[_player].has_wall_on_side(SIDE_LEFT):
+			var selected_pos = _game_state.get_player_selected_pos()
+			var selected_tile = _game_state.get_player_selected_tile()
+			
+			if selected_pos.x == 0 or _game_state.get_player_selected_tile().has_wall_on_side(SIDE_LEFT):
 				$WallButtons/WallLeft.hide()
-			if _selected_pos[_player].x == _grid_size.x - 1 or _selected_tiles[_player].has_wall_on_side(SIDE_RIGHT):
+			if selected_pos.x == _grid_size.x - 1 or selected_tile.has_wall_on_side(SIDE_RIGHT):
 				$WallButtons/WallRight.hide()
-			if _selected_pos[_player].y == 0 or _selected_tiles[_player].has_wall_on_side(SIDE_TOP):
+			if selected_pos.y == 0 or selected_tile.has_wall_on_side(SIDE_TOP):
 				$WallButtons/WallTop.hide()
-			if _selected_pos[_player].y == _grid_size.y - 1 or _selected_tiles[_player].has_wall_on_side(SIDE_BOTTOM):
+			if selected_pos.y == _grid_size.y - 1 or selected_tile.has_wall_on_side(SIDE_BOTTOM):
 				$WallButtons/WallBottom.hide()
 
 func _can_move_to_from(to_pos: Vector2i, from_pos: Vector2i) -> bool:
@@ -213,41 +214,42 @@ func _can_move_to_from(to_pos: Vector2i, from_pos: Vector2i) -> bool:
 	if from_pos.x > _grid_size.x - 1 or from_pos.y > _grid_size.y - 1: return false
 	if from_pos.x < 0 or from_pos.y < 0: return false
 	
-	var to = _grid[to_pos.x][to_pos.y]
+	var to = _game_state.get_tile(to_pos)
 	
 	#if to in _selected_tiles and not to == _selected_tiles[_player]: return false
 	
-	var from = _grid[from_pos.x][from_pos.y]
+	var from = _game_state.get_tile(from_pos)
 	
 	var side = _dir_sides[dir]
 	
 	return not from.has_wall_on_side(side) and not to.has_wall_on_side(_get_opposite_side(side))
 
 func highlight_valid_tiles() -> void:
-	if not _selected_tiles[_player]: return
-	_valid_tiles = [ _selected_tiles[_player] ]
+	if not _game_state.get_player_selected_tile(): return
+	_game_state.clear_valid_tiles()
+	_game_state.add_valid_tile(_game_state.get_player_selected_tile())
 	
-	var new_valid_tiles = []
+	var new_valid_tiles: Array[Tile] = []
 	var checked = []
 	
 	for i in range(2):
-		for from_tile in _valid_tiles:
+		for from_tile in _game_state.get_valid_tiles():
 			if from_tile in checked: continue
 			checked.append(from_tile)
 			for dir in _dir_sides.keys():
 				var to_pos = from_tile.get_grid_pos() + dir
 				if _can_move_to_from(to_pos, from_tile.get_grid_pos()):
-					var to = _grid[to_pos.x][to_pos.y]
+					var to = _game_state.get_tile(to_pos)
 					
-					if to not in _selected_tiles or to == _selected_tiles[_player]:
-						new_valid_tiles.append(_grid[to_pos.x][to_pos.y])
-		_valid_tiles = new_valid_tiles.duplicate()
+					if not _game_state.tile_selected(to) or to == _game_state.get_player_selected_tile():
+						new_valid_tiles.append(to)
+		_game_state.set_valid_tiles(new_valid_tiles)
 	
-	for tile in _valid_tiles:
+	for tile in _game_state.get_valid_tiles():
 		tile.highlight()
 
 func unhighlight_tiles() -> void:
-	for tile in _valid_tiles:
+	for tile in _game_state.get_valid_tiles():
 		tile.unhighlight()
 
 func get_grid_size() -> Vector2i:
