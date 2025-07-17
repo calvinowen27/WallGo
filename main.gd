@@ -82,13 +82,23 @@ func _ready() -> void:
 	#_set_place_mode(MODE_COUNTER)
 
 func _process(_delta: float) -> void:
-	if Input.is_action_just_pressed("click"):
-		var mouse_pos = get_global_mouse_position() + Vector2(_tile_size / 2, _tile_size / 2)
-		var idx = Vector2i(clamp(mouse_pos.x / _tile_size, 0, _grid_size.x - 1), clamp(mouse_pos.y / _tile_size, 0, _grid_size.y - 1))
+	if _game_state.get_player() == 0:
+		if Input.is_action_just_pressed("click"):
+			var mouse_pos = get_global_mouse_position() + Vector2(_tile_size / 2, _tile_size / 2)
+			var idx = Vector2i(clamp(mouse_pos.x / _tile_size, 0, _grid_size.x - 1), clamp(mouse_pos.y / _tile_size, 0, _grid_size.y - 1))
 
-		if _game_state.get_mode() == MODE_COUNTER:
-			if try_place_counter_at_pos(idx):
-				_set_place_mode(MODE_WALL)
+			if _game_state.get_mode() == MODE_COUNTER:
+				if try_place_counter_at_pos(idx):
+					_set_place_mode(MODE_WALL)
+	else:
+		var valid_tiles = _game_state.get_valid_tiles()
+		var r = randi_range(0, len(valid_tiles) - 1)
+		var tile_pos = valid_tiles[r].get_grid_pos()
+		if try_place_counter_at_pos(tile_pos):
+			_set_place_mode(MODE_WALL)
+		
+		r = randi_range(0, 3)
+		try_place_wall_on_side(r)
 
 func try_place_wall_on_side(side: int) -> bool:
 	var next_pos = _game_state.get_player_selected_pos() + _side_dirs[side]
