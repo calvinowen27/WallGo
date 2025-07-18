@@ -158,6 +158,7 @@ func score(state: GameState) -> float:
 	var score = state.get_player_score(1)
 	#print(score)
 	
-	score = score * score * score
+	#score = score * score * score
+	score = pow(score - 0.15, 8)
 	
 	return score

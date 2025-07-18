@@ -101,6 +101,9 @@ func _process(_delta: float) -> void:
 			var idx = Vector2i(clamp(mouse_pos.x / _tile_size, 0, _grid_size.x - 1), clamp(mouse_pos.y / _tile_size, 0, _grid_size.y - 1))
 
 			_game_state.try_place_counter_at_pos(idx)
+			
+			_game_state.calculate_scores()
+			if len(_game_state.get_scores()) != 0: EventBus.game_over.emit()
 	else:
 		#var valid_tiles = _game_state.get_valid_tiles()
 		#var r = randi_range(0, len(valid_tiles) - 1)
@@ -113,7 +116,7 @@ func _process(_delta: float) -> void:
 		var t = TreeNode.new()
 		t.init()
 		
-		for i in range(100):
+		for i in range(250):
 			var sample_state = _game_state.clone()
 			t.step(sample_state)
 		
