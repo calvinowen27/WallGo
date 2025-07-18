@@ -83,19 +83,16 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if _game_state.get_player() == 0:
-		if Input.is_action_just_pressed("click"):
+		if _game_state.get_mode() == MODE_COUNTER and Input.is_action_just_pressed("click"):
 			var mouse_pos = get_global_mouse_position() + Vector2(_tile_size / 2, _tile_size / 2)
 			var idx = Vector2i(clamp(mouse_pos.x / _tile_size, 0, _grid_size.x - 1), clamp(mouse_pos.y / _tile_size, 0, _grid_size.y - 1))
 
-			if _game_state.get_mode() == MODE_COUNTER:
-				if try_place_counter_at_pos(idx):
-					_set_place_mode(MODE_WALL)
+			try_place_counter_at_pos(idx)
 	else:
 		var valid_tiles = _game_state.get_valid_tiles()
 		var r = randi_range(0, len(valid_tiles) - 1)
 		var tile_pos = valid_tiles[r].get_grid_pos()
-		if try_place_counter_at_pos(tile_pos):
-			_set_place_mode(MODE_WALL)
+		try_place_counter_at_pos(tile_pos)
 		
 		r = randi_range(0, 3)
 		try_place_wall_on_side(r)
@@ -119,6 +116,8 @@ func try_place_counter_at_pos(pos: Vector2i) -> bool:
 	
 	place_counter_at_pos(pos)
 	
+	_set_place_mode(MODE_WALL)
+	
 	return true
 
 func place_counter_at_pos(pos: Vector2i) -> void:
@@ -134,7 +133,7 @@ func calculate_scores() -> void:
 	var shapes = []
 	
 	for player in range(_game_state.get_player_count()):
-		var tile = _game_state.get_player_selected_tile()
+		var tile = _game_state.get_selected_tile(player)
 		var tile_in_shape = false
 		for shape in shapes:
 			if tile in shape: tile_in_shape = true
@@ -157,10 +156,12 @@ func calculate_scores() -> void:
 	
 		shapes.append(shape)
 	
+	print(len(shapes), " shapes:")
 	for shape in shapes:
-		print(shape.size())
+		print("\t", len(shape))
+	print()
 	
-	if shapes.size() == _game_state.get_player_count(): $EndText.show()
+	if len(shapes) == _game_state.get_player_count(): $EndText.show()
 
 func is_pos_in_grid(pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.y >= 0 and pos.x < _grid_size.x and pos.y < _grid_size.y
