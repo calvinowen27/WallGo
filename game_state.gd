@@ -226,11 +226,11 @@ func calculate_scores() -> void:
 		shapes.append(shape)
 	
 	_score = []
-	print(len(shapes), " shapes:")
+	#print(len(shapes), " shapes:")
 	for shape in shapes:
-		print("\t", len(shape))
+		#print("\t", len(shape))
 		_score.append(len(shape))
-	print()
+	#print()
 	
 	if len(shapes) == get_player_count(): EventBus.game_over.emit()
 	else: _score.clear()
@@ -252,7 +252,7 @@ func set_place_mode(mode: int) -> void:
 	match mode:
 		MODE_COUNTER:
 			next_player()
-			print("next player")
+			#print("next player")
 			
 			find_valid_tiles()
 			
@@ -314,12 +314,10 @@ func get_player_score(player: int) -> float:
 		for dy in range(-2, 3):
 			var pos = get_selected_pos(player) + Vector2i(dx, dy)
 			if not is_pos_in_grid(pos): continue
-			for side in _side_dirs.keys():
-				if _grid[pos.x][pos.y].has_wall_on_side(side):
-					sum += 1
-					break
+			sum += _grid[pos.x][pos.y].wall_count()
 	
-	return float(sum) / 16
+	print("sum for score is ", sum)
+	return (16. - float(sum)) / 16.
 
 func get_actions() -> Array[Action]:
 	var actions: Array[Action] = []

@@ -5,7 +5,7 @@ class_name TreeNode
 var _parent: TreeNode = null
 
 var _children: Dictionary
-var _results: Array[int]
+var _results: Array[float]
 
 var _action: Action
 
@@ -14,12 +14,20 @@ func init(parent: TreeNode = null, key: String = "") -> void:
 	
 	_children = {}
 
-func avg_score() -> int:
+func avg_score() -> float:
 	var sum = 0
 	for result in _results:
 		sum += result
 	
-	return sum / len(_results)
+	return float(sum) / len(_results)
+
+func max_score() -> float:
+	var max = 0
+	for result in _results:
+		if result > max:
+			max = result
+	
+	return max
 
 func step(state: GameState) -> void:
 	print("STEP")
@@ -33,11 +41,13 @@ func get_best(state: GameState) -> Action:
 	
 	for action in actions:
 		if action.key() not in _children.keys(): continue
-		var avg_score = _children[action.key()].avg_score()
+		var avg_score = _children[action.key()].max_score()
+		#print("avg score is ", avg_score)
 		if avg_score > max_score:
 			max_score = avg_score
 			best = action
 	
+	print("best score is ", max_score)
 	return best
 
 func select(state: GameState) -> void:
@@ -63,10 +73,34 @@ func select(state: GameState) -> void:
 		_children[best_action.key()].select(new_state)
 
 func select_action(actions: Array[Action]) -> Action:
-	return actions[randi_range(0, len(actions) - 1)]
+	print("``````````````````````SELECT ACTION")
+	var values = []
+	var max = 0
+	
+	for action in actions:
+		var value = calculate_action_value(_children[action.key()])
+		values.append(value)
+		max += value
+	
+	for value in values:
+		value /= max
+	
+	var r = randf()
+	var prev = 0
+	for i in range(len(values)):
+		if r >= prev and r < values[i]:
+			#print("here 1")
+			return actions[i]
+		prev += values[i]
+	
+	#print("here 2")
+	return actions[-1]
 
-func calculate_action_value(action: Action) -> void:
-	pass
+func calculate_action_value(child: TreeNode) -> float:
+	#print("CALC ACTION VALUE")
+	var score = max_score()
+	var value = score + 0.3 * sqrt(log(len(_results)) / len(child._results))
+	return value
 
 func expand(state: GameState, avail_actions: Array[Action]) -> void:
 	print("EXPAND")
@@ -85,24 +119,26 @@ func rollout(state: GameState) -> void:
 	print("ROLLOUT")
 	
 	var count = 0
-	while not state.ended() and count < 100:
+	while not state.ended() and count < 10:
 		var actions = state.get_actions()
 		var action = actions[randi_range(0, len(actions) - 1)]
 		state = state.clone()
 		state.try_place_counter_at_pos(action.get_next_pos())
 		state.try_place_wall_on_side(action.get_wall_side())
 		count += 1
-		print(count)
+		#print(count)
 	
 	backpropagate(score(state))
 
-func backpropagate(result: int) -> void:
+func backpropagate(result: float) -> void:
 	print("BACKPROPAGATE")
 	
 	_results.append(result)
+	print("appending ", result)
 	if _parent: _parent.backpropagate(result)
 
-func score(state: GameState) -> int:
+func score(state: GameState) -> float:
 	print("SCORE")
 	
+	print("and score is ", state.get_player_score(1))
 	return state.get_player_score(1)
