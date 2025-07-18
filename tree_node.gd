@@ -39,7 +39,16 @@ func get_best(state: GameState) -> Action:
 			max_score = avg_score
 			best = action
 	
-	#print("best score is ", max_score)
+	print("best score is ", max_score)
+	print(best.key())
+	#print()
+	#for y in state.get_grid_size().x:
+		#var line = ""
+		#for x in state.get_grid_size().y:
+			#line += "%d " % state.get_tile(Vector2i(x, y)).wall_count()
+		#print(line)
+	#print()
+			
 	return best
 
 func select(state: GameState) -> void:
@@ -104,15 +113,19 @@ func expand(state: GameState, avail_actions: Array[Action]) -> void:
 	_children[action.key()] = new_child
 	var new_state = state.clone()
 	new_state.try_place_counter_at_pos(action.get_next_pos())
-	new_state.try_place_wall_on_side(action.get_wall_side())
+	
+	if not new_state.try_place_wall_on_side(action.get_wall_side()):
+		print("failed to place wall in expand")
+	
 	new_child.rollout(new_state)
 
 func rollout(state: GameState) -> void:
 	#print("ROLLOUT")
 	
 	var count = 0
-	while not state.ended() and count < 10:
+	while not state.ended() and count < 25:
 		var actions = state.get_actions()
+		if len(actions) == 0: break
 		var action = actions[randi_range(0, len(actions) - 1)]
 		state = state.clone()
 		state.try_place_counter_at_pos(action.get_next_pos())
@@ -133,4 +146,16 @@ func score(state: GameState) -> float:
 	#print("SCORE")
 	
 	#print("and score is ", state.get_player_score(1))
-	return state.get_player_score(1)
+	
+	print()
+	for y in state.get_grid_size().x:
+		var line = ""
+		for x in state.get_grid_size().y:
+			line += "%d " % state.get_tile(Vector2i(x, y)).wall_count()
+		print(line)
+	print()
+	
+	var score = state.get_player_score(1)
+	print(score)
+	
+	return score

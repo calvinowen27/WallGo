@@ -54,12 +54,14 @@ var _adjacent_sides: Dictionary = {
 func init(grid: Array[Array], grid_size: Vector2i, selected_tiles: Array[Tile], selected_pos: Array[Vector2i], player: int, player_count: int, valid_tiles: Array, mode: int, tile_size: int = 16) -> void:
 	#_grid = grid.duplicate(true)
 	
-	for x in grid_size.x:
-		_grid.append([])
-		for y in grid_size.y:
-			var tile = Tile.new()
-			tile.init(self, Vector2(x, y))
-			_grid[x].append(tile)
+	#for x in grid_size.x:
+		#_grid.append([])
+		#for y in grid_size.y:
+			#var tile = Tile.new()
+			#tile.init(self, Vector2(x, y))
+			#_grid[x].append(tile)
+	
+	_grid = grid
 	
 	_grid_size = grid_size
 	
@@ -154,15 +156,24 @@ func clone() -> GameState:
 		for y in _grid_size.y:
 			var tile = Tile.new()
 			tile.init(self, Vector2(x, y))
+			for side in _side_dirs.keys():
+				if _grid[x][y].has_wall_on_side(side):
+					tile.place_wall_on_side(side)
 			new_grid[x].append(tile)
 	
-	var selected_pos = _selected_pos.duplicate()
+	var selected_pos = _selected_pos.duplicate(true)
 	var selected_tiles: Array[Tile] = []
 	
 	for pos in selected_pos:
 		selected_tiles.append(new_grid[pos.x][pos.y])
 	
-	new_state.init(new_grid, _grid_size, selected_tiles, selected_pos, _player, _player_count, _valid_tiles.duplicate(true), _mode, _tile_size)
+	var valid_tiles: Array[Tile] = []
+	
+	for tile in _valid_tiles:
+		var pos = tile.get_grid_pos()
+		valid_tiles.append(new_grid[pos.x][pos.y])
+	
+	new_state.init(new_grid, _grid_size, selected_tiles, selected_pos, _player, _player_count, valid_tiles, _mode, _tile_size)
 	
 	return new_state
 
@@ -232,12 +243,11 @@ func calculate_scores() -> void:
 	_score = []
 	#print(len(shapes), " shapes:")
 	for shape in shapes:
-		#print("\t", len(shape))
+		#print("\t", len(shape))f
 		_score.append(len(shape))
 	#print()
 	
-	if len(shapes) == get_player_count(): EventBus.game_over.emit()
-	else: _score.clear()
+	if len(shapes) != get_player_count(): _score.clear()
 
 func is_pos_in_grid(pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.y >= 0 and pos.x < _grid_size.x and pos.y < _grid_size.y
@@ -299,15 +309,17 @@ func find_valid_tiles() -> void:
 				var to_pos = from_tile.get_grid_pos() + dir
 				if _can_move_to_from(to_pos, from_tile.get_grid_pos()):
 					var to = get_tile(to_pos)
+					if to in new_valid_tiles: continue
 					
 					if not tile_selected(to) or to == get_player_selected_tile():
 						new_valid_tiles.append(to)
 		set_valid_tiles(new_valid_tiles)
 
-func get_valid_spaces() -> Array[Tile]:
-	if not get_player_selected_tile(): return []
+func get_valid_spaces(player: int) -> Array[Tile]:
+	if not get_selected_tile(player): return []
 	
-	var valid_tiles: Array[Tile] = [ get_player_selected_tile() ]
+	var valid_tiles: Array[Tile] = [ get_selected_tile(player) ]
+	var new_valid_tiles: Array[Tile] = []
 	var checked = []
 	
 	for i in range(2):
@@ -318,9 +330,13 @@ func get_valid_spaces() -> Array[Tile]:
 				var to_pos = from_tile.get_grid_pos() + dir
 				if _can_move_to_from(to_pos, from_tile.get_grid_pos()):
 					var to = get_tile(to_pos)
+					if to in new_valid_tiles: continue
 					
-					if not tile_selected(to) or to == get_player_selected_tile():
-						valid_tiles.append(to)
+					if not tile_selected(to) or to == get_selected_tile(player):
+						new_valid_tiles.append(to)
+		valid_tiles = new_valid_tiles.duplicate()
+	
+	print(len(valid_tiles))
 	
 	return valid_tiles
 
@@ -330,13 +346,17 @@ func set_grid_size(grid_size: Vector2i) -> void:
 func set_tile_size(tile_size: float) -> void:
 	_tile_size = tile_size
 
+func get_scores() -> Array[int]:
+	return _score
+
 func get_player_score(player: int) -> float:
 	calculate_scores()
 	if len(_score) != 0:
 		print("game end state: score are ", _score[0], " and ", _score[1])
 		return float(_score[player]) / float(_grid_size.x * _grid_size.y)
 	
-	return float(len(get_valid_spaces())) / 13.
+	
+	return float(len(get_valid_spaces(player))) / 13.
 	
 	#var sum = 0
 	#for dx in range(-2, 3):

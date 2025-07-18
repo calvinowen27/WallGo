@@ -113,7 +113,7 @@ func _process(_delta: float) -> void:
 		var t = TreeNode.new()
 		t.init()
 		
-		for i in range(100):
+		for i in range(10):
 			var sample_state = _game_state.clone()
 			t.step(sample_state)
 		
@@ -126,18 +126,24 @@ func _process(_delta: float) -> void:
 			
 			if not _game_state.try_place_wall_on_side(best_action.get_wall_side()):
 				print("place wall failed")
+		
+		print(_game_state.get_player_score(1))
 
 func _on_wall_left_pressed() -> void:
 	_game_state.try_place_wall_on_side(SIDE_LEFT)
+	#print(_game_state.get_player_score(0))
 
 func _on_wall_right_pressed() -> void:
 	_game_state.try_place_wall_on_side(SIDE_RIGHT)
+	#print(_game_state.get_player_score(0))
 
 func _on_wall_bottom_pressed() -> void:
 	_game_state.try_place_wall_on_side(SIDE_BOTTOM)
+	#print(_game_state.get_player_score(0))
 
 func _on_wall_top_pressed() -> void:
 	_game_state.try_place_wall_on_side(SIDE_TOP)
+	#print(_game_state.get_player_score(0))
 
 func get_grid_size() -> Vector2i:
 	return _grid_size
@@ -145,6 +151,9 @@ func get_grid_size() -> Vector2i:
 func _on_mode_changed(mode: int) -> void:
 	match mode:
 		MODE_COUNTER:
+			if len(_game_state.get_scores()) != 0:
+				EventBus.game_over.emit()
+			
 			if _game_state.get_player() != 0: return
 			
 			highlight_valid_tiles()
@@ -188,3 +197,13 @@ func _on_counter_placed(pos: Vector2) -> void:
 
 func _on_game_over() -> void:
 	$EndText.show()
+	var winner = 0
+	var max_score = 0
+	
+	var scores = _game_state.get_scores()
+	for i in range(len(scores)):
+		if scores[i] > max_score:
+			max_score = scores[i]
+			winner = i
+			
+	$EndText.text += "\nPlayer %d wins" % winner
