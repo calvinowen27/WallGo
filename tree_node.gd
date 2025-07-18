@@ -147,15 +147,17 @@ func score(state: GameState) -> float:
 	
 	#print("and score is ", state.get_player_score(1))
 	
-	print()
-	for y in state.get_grid_size().x:
-		var line = ""
-		for x in state.get_grid_size().y:
-			line += "%d " % state.get_tile(Vector2i(x, y)).wall_count()
-		print(line)
-	print()
+	#print()
+	#for y in state.get_grid_size().x:
+		#var line = ""
+		#for x in state.get_grid_size().y:
+			#line += "%d " % state.get_tile(Vector2i(x, y)).wall_count()
+		#print(line)
+	#print()
 	
 	var score = state.get_player_score(1)
-	print(score)
+	#print(score)
+	
+	score = score * score * score
 	
 	return score

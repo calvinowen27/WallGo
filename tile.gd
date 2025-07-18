@@ -51,6 +51,15 @@ func place_wall_on_side(side: int) -> bool:
 func has_wall_on_side(side: int) -> bool:
 	return _walls[side]
 
+func can_place_wall_on_side(side: int) -> bool:
+	if side == SIDE_LEFT and _pos.x == 0: return false
+	if side == SIDE_RIGHT and _pos.x == _controller.get_grid_size().x - 1: return false
+	if side == SIDE_TOP and _pos.y == 0: return false
+	if side == SIDE_BOTTOM and _pos.y == _controller.get_grid_size().y - 1: return false
+	
+	return true
+	
+
 func wall_count() -> int:
 	var sum = 0
 	for key in _walls.keys():

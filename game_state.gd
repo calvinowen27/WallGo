@@ -336,7 +336,7 @@ func get_valid_spaces(player: int) -> Array[Tile]:
 						new_valid_tiles.append(to)
 		valid_tiles = new_valid_tiles.duplicate()
 	
-	print(len(valid_tiles))
+	#print(len(valid_tiles))
 	
 	return valid_tiles
 
@@ -375,6 +375,7 @@ func get_actions() -> Array[Action]:
 	for tile in _valid_tiles:
 		for side in _side_dirs.keys():
 			if tile.has_wall_on_side(side): continue
+			if not tile.can_place_wall_on_side(side): continue
 			
 			var action = Action.new()
 			
