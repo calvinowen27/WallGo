@@ -124,7 +124,8 @@ func _process(_delta: float) -> void:
 			#print("ok good")
 			_game_state.try_place_counter_at_pos(best_action.get_next_pos())
 			
-			_game_state.try_place_wall_on_side(best_action.get_wall_side())
+			if not _game_state.try_place_wall_on_side(best_action.get_wall_side()):
+				print("place wall failed")
 
 func _on_wall_left_pressed() -> void:
 	_game_state.try_place_wall_on_side(SIDE_LEFT)

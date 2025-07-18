@@ -304,6 +304,26 @@ func find_valid_tiles() -> void:
 						new_valid_tiles.append(to)
 		set_valid_tiles(new_valid_tiles)
 
+func get_valid_spaces() -> Array[Tile]:
+	if not get_player_selected_tile(): return []
+	
+	var valid_tiles: Array[Tile] = [ get_player_selected_tile() ]
+	var checked = []
+	
+	for i in range(2):
+		for from_tile in valid_tiles:
+			if from_tile in checked: continue
+			checked.append(from_tile)
+			for dir in _dir_sides.keys():
+				var to_pos = from_tile.get_grid_pos() + dir
+				if _can_move_to_from(to_pos, from_tile.get_grid_pos()):
+					var to = get_tile(to_pos)
+					
+					if not tile_selected(to) or to == get_player_selected_tile():
+						valid_tiles.append(to)
+	
+	return valid_tiles
+
 func set_grid_size(grid_size: Vector2i) -> void:
 	_grid_size = grid_size
 
@@ -316,16 +336,20 @@ func get_player_score(player: int) -> float:
 		print("game end state: score are ", _score[0], " and ", _score[1])
 		return float(_score[player]) / float(_grid_size.x * _grid_size.y)
 	
-	var sum = 0
-	for dx in range(-2, 3):
-		for dy in range(-2, 3):
-			var pos = get_selected_pos(player) + Vector2i(dx, dy)
-			if not is_pos_in_grid(pos): continue
-			sum += _grid[pos.x][pos.y].wall_count()
+	return float(len(get_valid_spaces())) / 13.
 	
-	return (16. - float(sum)) / 16.
+	#var sum = 0
+	#for dx in range(-2, 3):
+		#for dy in range(-2, 3):
+			#var pos = get_selected_pos(player) + Vector2i(dx, dy)
+			#if not is_pos_in_grid(pos): continue
+			#sum += _grid[pos.x][pos.y].wall_count()
+	#
+	#return (16. - float(sum)) / 16.
 
 func get_actions() -> Array[Action]:
+	find_valid_tiles()
+	
 	var actions: Array[Action] = []
 	
 	for tile in _valid_tiles:
