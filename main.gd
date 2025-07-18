@@ -113,7 +113,7 @@ func _process(_delta: float) -> void:
 		var t = TreeNode.new()
 		t.init()
 		
-		for i in range(10):
+		for i in range(100):
 			var sample_state = _game_state.clone()
 			t.step(sample_state)
 		
@@ -121,7 +121,7 @@ func _process(_delta: float) -> void:
 		if not best_action:
 			print("uh oh best action is bad")
 		else:
-			print("ok good")
+			#print("ok good")
 			_game_state.try_place_counter_at_pos(best_action.get_next_pos())
 			
 			_game_state.try_place_wall_on_side(best_action.get_wall_side())

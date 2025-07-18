@@ -170,7 +170,9 @@ func try_place_wall_on_side(side: int) -> bool:
 	var next_pos = get_player_selected_pos() + _side_dirs[side]
 	if next_pos.x < 0 or next_pos.y < 0 or next_pos.x > _grid_size.x - 1 or next_pos.y > _grid_size.y - 1: return false
 	
-	if not get_player_selected_tile().place_wall_on_side(side): return false
+	if not get_player_selected_tile().place_wall_on_side(side):
+		print("failed to place wall")
+		return false
 
 	get_tile(next_pos).place_wall_on_side(_get_opposite_side(side))
 
@@ -181,7 +183,9 @@ func try_place_wall_on_side(side: int) -> bool:
 	return true
 
 func try_place_counter_at_pos(pos: Vector2i) -> bool:
-	if not tile_at_pos_valid(pos): return false
+	if not tile_at_pos_valid(pos):
+		print("failed to place counter")
+		return false
 	
 	place_counter_at_pos(pos)
 	
@@ -307,7 +311,10 @@ func set_tile_size(tile_size: float) -> void:
 	_tile_size = tile_size
 
 func get_player_score(player: int) -> float:
-	if len(_score) != 0: return float(_score[player]) / float(_grid_size.x * _grid_size.y)
+	calculate_scores()
+	if len(_score) != 0:
+		print("game end state: score are ", _score[0], " and ", _score[1])
+		return float(_score[player]) / float(_grid_size.x * _grid_size.y)
 	
 	var sum = 0
 	for dx in range(-2, 3):
@@ -316,7 +323,6 @@ func get_player_score(player: int) -> float:
 			if not is_pos_in_grid(pos): continue
 			sum += _grid[pos.x][pos.y].wall_count()
 	
-	print("sum for score is ", sum)
 	return (16. - float(sum)) / 16.
 
 func get_actions() -> Array[Action]:

@@ -21,16 +21,8 @@ func avg_score() -> float:
 	
 	return float(sum) / len(_results)
 
-func max_score() -> float:
-	var max = 0
-	for result in _results:
-		if result > max:
-			max = result
-	
-	return max
-
 func step(state: GameState) -> void:
-	print("STEP")
+	#print("STEP")
 	select(state)
 
 func get_best(state: GameState) -> Action:
@@ -41,17 +33,17 @@ func get_best(state: GameState) -> Action:
 	
 	for action in actions:
 		if action.key() not in _children.keys(): continue
-		var avg_score = _children[action.key()].max_score()
+		var avg_score = _children[action.key()].avg_score()
 		#print("avg score is ", avg_score)
 		if avg_score > max_score:
 			max_score = avg_score
 			best = action
 	
-	print("best score is ", max_score)
+	#print("best score is ", max_score)
 	return best
 
 func select(state: GameState) -> void:
-	print("SELECT")
+	#print("SELECT")
 	
 	var actions = state.get_actions()
 	if len(actions) == 0: return
@@ -73,7 +65,7 @@ func select(state: GameState) -> void:
 		_children[best_action.key()].select(new_state)
 
 func select_action(actions: Array[Action]) -> Action:
-	print("``````````````````````SELECT ACTION")
+	#print("``````````````````````SELECT ACTION")
 	var values = []
 	var max = 0
 	
@@ -98,12 +90,12 @@ func select_action(actions: Array[Action]) -> Action:
 
 func calculate_action_value(child: TreeNode) -> float:
 	#print("CALC ACTION VALUE")
-	var score = max_score()
+	var score = avg_score()
 	var value = score + 0.3 * sqrt(log(len(_results)) / len(child._results))
 	return value
 
 func expand(state: GameState, avail_actions: Array[Action]) -> void:
-	print("EXPAND")
+	#print("EXPAND")
 	
 	var action = avail_actions[randi_range(0, len(avail_actions) - 1)]
 	var new_child = TreeNode.new()
@@ -116,7 +108,7 @@ func expand(state: GameState, avail_actions: Array[Action]) -> void:
 	new_child.rollout(new_state)
 
 func rollout(state: GameState) -> void:
-	print("ROLLOUT")
+	#print("ROLLOUT")
 	
 	var count = 0
 	while not state.ended() and count < 10:
@@ -131,14 +123,14 @@ func rollout(state: GameState) -> void:
 	backpropagate(score(state))
 
 func backpropagate(result: float) -> void:
-	print("BACKPROPAGATE")
+	#print("BACKPROPAGATE")
 	
 	_results.append(result)
-	print("appending ", result)
+	#print("appending ", result)
 	if _parent: _parent.backpropagate(result)
 
 func score(state: GameState) -> float:
-	print("SCORE")
+	#print("SCORE")
 	
-	print("and score is ", state.get_player_score(1))
+	#print("and score is ", state.get_player_score(1))
 	return state.get_player_score(1)
