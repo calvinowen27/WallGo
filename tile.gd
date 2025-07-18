@@ -1,13 +1,15 @@
-extends Sprite2D
+extends Node
 
 class_name Tile
 
-@export var _highlight_color: Color
+var _controller: Node
 
 var _pos: Vector2i
 var _walls: Dictionary
 
-var _controller: Node2D
+var _has_counter: int = -1
+
+var _tile_display: Sprite2D
 
 enum {
 	SIDE_TOP,
@@ -16,11 +18,11 @@ enum {
 	SIDE_LEFT
 }
 
-func init(controller: Node2D, pos: Vector2, tile_size: float) -> void:
+func init(controller: Node, pos: Vector2i, tile_display: Sprite2D = null) -> void:
 	_controller = controller
 	_pos = pos
-	set_size(tile_size)
-
+	_tile_display = tile_display
+	
 	_walls = {
 		SIDE_LEFT: false,
 		SIDE_RIGHT: false,
@@ -29,25 +31,20 @@ func init(controller: Node2D, pos: Vector2, tile_size: float) -> void:
 	}
 
 func place_counter(player: int) -> void:
-	$Counter.visible = true
+	_has_counter = player
 	
-	if player == 1: $Counter.self_modulate = Color.BLUE
-	else: $Counter.self_modulate = Color.WHITE
+	if _tile_display: _tile_display.place_counter(player)
 
 func remove_counter() -> void:
-	$Counter.visible = false
+	_has_counter = -1
+	
+	if _tile_display: _tile_display.remove_counter()
 
 func place_wall_on_side(side: int) -> bool:
 	if side not in _walls.keys(): return false
 	
-	match side:
-		SIDE_TOP: $WallTop.show()
-		SIDE_BOTTOM: $WallBottom.show()
-		SIDE_LEFT: $WallLeft.show()
-		SIDE_RIGHT: $WallRight.show()
-		_: return false
-	
 	_walls[side] = true
+	if _tile_display: _tile_display.place_wall_on_side(side)
 	
 	return true
 
@@ -65,20 +62,8 @@ func has_wall_to_edge() -> bool:
 func get_walls() -> Dictionary:
 	return _walls
 
-func get_texture_dims() -> Vector2:
-	return texture.get_size()
-
-func set_size(size: float) -> void:
-	scale = Vector2(size, size) / texture.get_size()
-
-func get_effective_size() -> Vector2:
-	return texture.get_size() * scale
-
 func get_grid_pos() -> Vector2i:
 	return _pos
 
-func highlight() -> void:
-	self_modulate = _highlight_color
-
-func unhighlight() -> void:
-	self_modulate = Color.WHITE
+func get_display() -> Sprite2D:
+	return _tile_display

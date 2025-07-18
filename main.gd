@@ -7,6 +7,9 @@ extends Node2D
 @onready var _center: Vector2i = _grid_size * _tile_size / 2 - Vector2(_tile_size / 2, _tile_size / 2)
 @onready var _camera: Camera2D = %Camera2D
 
+var _tile_display_grid: Array[Array] = []
+var _selected_tiles = []
+
 #var _selected_tiles: Array[Tile] = []
 #var _selected_pos: Array[Vector2i] = []
 #var _player: int = 0
@@ -67,19 +70,23 @@ func _ready() -> void:
 	_game_state.set_grid_size(_grid_size)
 	_game_state.set_tile_size(_tile_size)
 	for x in range(_grid_size.x):
+		_tile_display_grid.append([])
 		grid.append([])
 		for y in range(_grid_size.y):
-			var tile = _tile_scene.instantiate()
-			tile.init(self, Vector2(x, y), _tile_size)
-			$Tiles.add_child(tile)
-			tile.position = Vector2(x, y) * tile.get_effective_size()
-			grid[x].append(tile)
+			var tile_display = _tile_scene.instantiate()
+			tile_display.init(self, Vector2(x, y), _tile_size)
+			$Tiles.add_child(tile_display)
+			tile_display.position = Vector2(x, y) * tile_display.get_effective_size()
+			_tile_display_grid[x].append(tile_display)
+			
+			grid[x].append(tile_display.get_tile())
 	
 	for i in range(_game_state.get_player_count()):
 		_game_state.select_tile(-1, Vector2i.ZERO)
 	
 	for i in range(_game_state.get_player_count()):
-		_game_state.place_counter_at_pos(_grid_size / 2 + Vector2i(i, i))
+		var pos = _grid_size / 2 + Vector2i(i, i)
+		_game_state.place_counter_at_pos(pos)
 		_game_state.set_place_mode(MODE_COUNTER)
 	
 	$EndText.position = _camera.position
@@ -95,14 +102,29 @@ func _process(_delta: float) -> void:
 
 			_game_state.try_place_counter_at_pos(idx)
 	else:
-		var valid_tiles = _game_state.get_valid_tiles()
-		var r = randi_range(0, len(valid_tiles) - 1)
-		var tile_pos = valid_tiles[r].get_grid_pos()
-		_game_state.try_place_counter_at_pos(tile_pos)
+		#var valid_tiles = _game_state.get_valid_tiles()
+		#var r = randi_range(0, len(valid_tiles) - 1)
+		#var tile_pos = valid_tiles[r].get_grid_pos()
+		#_game_state.try_place_counter_at_pos(tile_pos)
+		#
+		#r = randi_range(0, 3)
+		#_game_state.try_place_wall_on_side(r)
 		
-		r = randi_range(0, 3)
-		_game_state.try_place_wall_on_side(r)
-
+		var t = TreeNode.new()
+		t.init()
+		
+		for i in range(10):
+			var sample_state = _game_state.clone()
+			t.step(sample_state)
+		
+		var best_action = t.get_best(_game_state)
+		if not best_action:
+			print("uh oh best action is bad")
+		else:
+			print("ok good")
+			_game_state.try_place_counter_at_pos(best_action.get_next_pos())
+			
+			_game_state.try_place_wall_on_side(best_action.get_wall_side())
 
 func _on_wall_left_pressed() -> void:
 	_game_state.try_place_wall_on_side(SIDE_LEFT)
@@ -122,6 +144,10 @@ func get_grid_size() -> Vector2i:
 func _on_mode_changed(mode: int) -> void:
 	match mode:
 		MODE_COUNTER:
+			if _game_state.get_player() != 0: return
+			
+			highlight_valid_tiles()
+			
 			$WallButtons/WallLeft.show()
 			$WallButtons/WallRight.show()
 			$WallButtons/WallTop.show()
@@ -130,6 +156,10 @@ func _on_mode_changed(mode: int) -> void:
 			$WallButtons.hide()
 		
 		MODE_WALL:
+			if _game_state.get_player() != 0: return
+			
+			unhighlight_tiles()
+			
 			$WallButtons.show()
 			
 			var selected_pos = _game_state.get_player_selected_pos()
@@ -144,8 +174,16 @@ func _on_mode_changed(mode: int) -> void:
 			if selected_pos.y == _grid_size.y - 1 or selected_tile.has_wall_on_side(SIDE_BOTTOM):
 				$WallButtons/WallBottom.hide()
 
+func highlight_valid_tiles() -> void:
+	for tile in _game_state.get_valid_tiles():
+		tile.get_display().highlight()
+
+func unhighlight_tiles() -> void:
+	for tile in _game_state.get_valid_tiles():
+		tile.get_display().unhighlight()
+
 func _on_counter_placed(pos: Vector2) -> void:
-	$WallButtons.position = pos - Vector2(_tile_size, _tile_size) / 2
+	$WallButtons.position = _tile_display_grid[pos.x][pos.y].position - Vector2(_tile_size, _tile_size) / 2
 
 func _on_game_over() -> void:
 	$EndText.show()

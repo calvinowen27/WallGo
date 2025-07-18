@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://be07t3wys0ugv"]
 
 [ext_resource type="Texture2D" uid="uid://ci5ql42dhwtv2" path="res://tile.png" id="1_0xl3i"]
-[ext_resource type="Script" path="res://tile.gd" id="2_gd8uo"]
+[ext_resource type="Script" path="res://tile_display.gd" id="2_gd8uo"]
 [ext_resource type="Texture2D" uid="uid://cwih34ibnrk6s" path="res://counter.png" id="3_7jenx"]
 [ext_resource type="Texture2D" uid="uid://cp2ivugysqpxc" path="res://walls.png" id="4_ann10"]
 
