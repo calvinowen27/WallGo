@@ -75,32 +75,42 @@ func select(state: GameState) -> void:
 
 func select_action(actions: Array[Action]) -> Action:
 	#print("``````````````````````SELECT ACTION")
-	var values = []
+	#var values = []
 	var max = 0
+	var best = actions[0]
 	
 	for action in actions:
 		var value = calculate_action_value(_children[action.key()])
-		values.append(value)
-		max += value
+		#values.append(max+value)
+		#max += value
+		if value > max:
+			max = value
+			best = action
+		#print(max)
 	
-	for value in values:
-		value /= max
+	return best
 	
-	var r = randf()
-	var prev = 0
-	for i in range(len(values)):
-		if r >= prev and r < values[i]:
-			#print("here 1")
-			return actions[i]
-		prev += values[i]
-	
-	#print("here 2")
-	return actions[-1]
+	#for value in values:
+		#value /= max
+		##print(value)
+	#
+	#var r = randf()
+	##print("r: ", r)
+	#var prev = 0
+	#for i in range(len(values)):
+		#if r >= prev and r < values[i]:
+			##print("here 1")
+			##print("r: ", r, ", value: ", values[i])
+			#return actions[i]
+		#prev += values[i]
+	#
+	##print("here 2")
+	#return actions[-1]
 
 func calculate_action_value(child: TreeNode) -> float:
 	#print("CALC ACTION VALUE")
 	var score = avg_score()
-	var value = score + 0.3 * sqrt(log(len(_results)) / len(child._results))
+	var value = score + 0.5 * sqrt(log(len(_results)) / len(child._results))
 	return value
 
 func expand(state: GameState, avail_actions: Array[Action]) -> void:
@@ -159,6 +169,6 @@ func score(state: GameState) -> float:
 	#print(score)
 	
 	#score = score * score * score
-	score = pow(score - 0.15, 8)
+	score = pow(score, 3)
 	
 	return score

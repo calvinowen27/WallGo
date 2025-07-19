@@ -353,7 +353,7 @@ func get_player_score(player: int) -> float:
 	calculate_scores()
 	if len(_score) != 0:
 		print("game end state: score are ", _score[0], " and ", _score[1])
-		#if _score[player] > _score[-player + 1]: return 1
+		if _score[player] > _score[-player + 1]: return 1
 		return float(_score[player]) / float(_grid_size.x * _grid_size.y)
 	
 	

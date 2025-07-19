@@ -85,7 +85,7 @@ func _ready() -> void:
 		_game_state.select_tile(-1, Vector2i.ZERO)
 	
 	for i in range(_game_state.get_player_count()):
-		var pos = _grid_size / 2 + Vector2i(i, i)
+		var pos = _grid_size / 2 + Vector2i(i-2, i-2)
 		_game_state.place_counter_at_pos(pos)
 		_game_state.set_place_mode(MODE_COUNTER)
 	
@@ -116,7 +116,7 @@ func _process(_delta: float) -> void:
 		var t = TreeNode.new()
 		t.init()
 		
-		for i in range(250):
+		for i in range(500):
 			var sample_state = _game_state.clone()
 			t.step(sample_state)
 		
