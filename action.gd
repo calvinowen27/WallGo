@@ -26,3 +26,16 @@ func get_wall_side() -> int:
 
 func set_parent(parent: Action) -> void:
 	_parent = parent
+
+func is_wall_adjacent_to_tile(pos: Vector2i) -> bool:
+	if pos.x != _next_pos.x and pos.y != _next_pos.y: return false
+	
+	if pos.y == _next_pos.y:
+		if pos.x == _next_pos.x - 1 and _wall_side == SIDE_LEFT: return true
+		if pos.x == _next_pos.x + 1 and _wall_side == SIDE_RIGHT: return true
+	
+	if pos.x == _next_pos.x:
+		if pos.y == _next_pos.y - 1 and _wall_side == SIDE_BOTTOM: return true
+		if pos.y == _next_pos.y + 1 and _wall_side == SIDE_TOP: return true
+	
+	return false

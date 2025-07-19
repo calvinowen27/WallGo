@@ -95,6 +95,8 @@ func _ready() -> void:
 	#_game_state.set_place_mode(MODE_COUNTER)
 
 func _process(_delta: float) -> void:
+	if len(_game_state.get_scores()) != 0: return # game over
+	
 	if _game_state.get_player() == 0:
 		if _game_state.get_mode() == MODE_COUNTER and Input.is_action_just_pressed("click"):
 			var mouse_pos = get_global_mouse_position() + Vector2(_tile_size / 2, _tile_size / 2)

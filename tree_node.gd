@@ -92,19 +92,19 @@ func select_action(actions: Array[Action]) -> Action:
 	
 	#for value in values:
 		#value /= max
-		##print(value)
-	#
-	#var r = randf()
-	##print("r: ", r)
+		#print(value)
+	
+	#var r = randf()*max
+	#print("r: ", r)
 	#var prev = 0
 	#for i in range(len(values)):
-		#if r >= prev and r < values[i]:
-			##print("here 1")
-			##print("r: ", r, ", value: ", values[i])
+		#if prev >= r and r < values[i]:
+			#print("here 1")
+			#print("r: ", r, ", value: ", values[i])
 			#return actions[i]
 		#prev += values[i]
-	#
-	##print("here 2")
+	
+	#print("here 2")
 	#return actions[-1]
 
 func calculate_action_value(child: TreeNode) -> float:
@@ -136,7 +136,35 @@ func rollout(state: GameState) -> void:
 	while not state.ended() and count < 25:
 		var actions = state.get_actions()
 		if len(actions) == 0: break
+		
+		var values = []
+		var player_pos = state.get_selected_pos(0)
+		#var bot_pos = state.get_selected_pos(1)
+		
+		#var closest = actions[0]
+		#var min_dist = 2
+		var max = 0
+		for action in actions:
+			var dist1 = (player_pos - action.get_next_pos()).length()
+			#var dist2 = (bot_pos - action.get_next_pos()).length()
+			max += 2-dist1
+			if action.is_wall_adjacent_to_tile(player_pos):
+				max += 0.5
+			#max += dist2
+			values.append(max)
+			#if dist < min_dist:
+				#min_dist = dist
+				#closest = action
+		
 		var action = actions[randi_range(0, len(actions) - 1)]
+		var prev = 0
+		var r = randf()*max
+		for i in range(len(values)):
+			var value = values[i]
+			if prev <= r and r < value:
+				action = actions[i]
+				break
+		
 		state = state.clone()
 		state.try_place_counter_at_pos(action.get_next_pos())
 		state.try_place_wall_on_side(action.get_wall_side())

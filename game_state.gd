@@ -6,7 +6,7 @@ var _tile_size: float = 16
 
 var _selected_tiles: Array[Tile] = []
 var _selected_pos: Array[Vector2i] = []
-var _player: int = 1
+var _player: int = 0
 @export var _player_count: int = 2
 
 var _grid: Array[Array]
@@ -354,8 +354,8 @@ func get_player_score(player: int) -> float:
 	if len(_score) != 0:
 		#print("game end state: score are ", _score[0], " and ", _score[1])
 		if _score[player] > _score[-player + 1]: return 1
-		#else: return 0
-		return float(_score[player]) / float(_grid_size.x * _grid_size.y)
+		else: return 0
+		#return float(_score[player]) / float(_grid_size.x * _grid_size.y)
 	
 	
 	return float(len(get_valid_spaces(player))) / 13.
