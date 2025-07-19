@@ -105,18 +105,10 @@ func _process(_delta: float) -> void:
 			_game_state.calculate_scores()
 			if len(_game_state.get_scores()) != 0: EventBus.game_over.emit()
 	else:
-		#var valid_tiles = _game_state.get_valid_tiles()
-		#var r = randi_range(0, len(valid_tiles) - 1)
-		#var tile_pos = valid_tiles[r].get_grid_pos()
-		#_game_state.try_place_counter_at_pos(tile_pos)
-		#
-		#r = randi_range(0, 3)
-		#_game_state.try_place_wall_on_side(r)
-		
 		var t = TreeNode.new()
 		t.init()
 		
-		for i in range(500):
+		for i in range(1000):
 			var sample_state = _game_state.clone()
 			t.step(sample_state)
 		
@@ -131,6 +123,25 @@ func _process(_delta: float) -> void:
 				print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!place wall failed")
 		
 		#print(_game_state.get_player_score(1))
+
+#func _process(_delta: float) -> void:
+	#var t = TreeNode.new()
+	#t.init()
+	#
+	#for i in range(1000):
+		#var sample_state = _game_state.clone()
+		#t.step(sample_state)
+	#
+	#var best_action = t.get_best(_game_state)
+	#if not best_action:
+		#print("uh oh best action is bad")
+	#else:
+		##print("ok good")
+		#_game_state.try_place_counter_at_pos(best_action.get_next_pos())
+		#
+		#if not _game_state.try_place_wall_on_side(best_action.get_wall_side()):
+			#print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!place wall failed")
+	
 
 func _on_wall_left_pressed() -> void:
 	_game_state.try_place_wall_on_side(SIDE_LEFT)

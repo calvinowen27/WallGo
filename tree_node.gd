@@ -110,7 +110,7 @@ func select_action(actions: Array[Action]) -> Action:
 func calculate_action_value(child: TreeNode) -> float:
 	#print("CALC ACTION VALUE")
 	var score = avg_score()
-	var value = score + 0.5 * sqrt(log(len(_results)) / len(child._results))
+	var value = score + 0.141 * sqrt(log(len(_results)) / len(child._results))
 	return value
 
 func expand(state: GameState, avail_actions: Array[Action]) -> void:
