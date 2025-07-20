@@ -1,5 +1,7 @@
 extends Node2D
 
+class_name Main
+
 @export var _grid_size: Vector2i
 @export var _tile_scene: PackedScene
 @export var _tile_size: float = 16
@@ -56,7 +58,19 @@ var _adjacent_sides: Dictionary = {
 	SIDE_RIGHT: [ SIDE_RIGHT, SIDE_TOP, SIDE_BOTTOM ],
 }
 
+static var _valid_from_pos: Dictionary = {}
+
 func _ready() -> void:
+	for x in range(_grid_size.x):
+		for y in range(_grid_size.y):
+			var pos = Vector2i(x, y)
+			var valid = []
+			for dx in range(-2, 3):
+				for dy in range(-2, 3):
+					if Vector2(dx, dy).length() > 2: continue
+					valid.append(pos + Vector2i(dx, dy))
+			_valid_from_pos[pos] = valid
+	
 	_camera.position = _center
 	
 	EventBus.mode_changed.connect(_on_mode_changed)
@@ -110,7 +124,7 @@ func _process(_delta: float) -> void:
 		var t = TreeNode.new()
 		t.init()
 		
-		for i in range(1000):
+		for i in range(50):
 			var sample_state = _game_state.clone()
 			t.step(sample_state)
 		

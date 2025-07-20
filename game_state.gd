@@ -10,6 +10,7 @@ var _player: int = 0
 @export var _player_count: int = 2
 
 var _grid: Array[Array]
+var _all_tiles: Array[Tile]
 var _grid_size: Vector2i
 
 var _valid_tiles: Array[Tile] = []
@@ -65,6 +66,10 @@ func init(grid: Array[Array], grid_size: Vector2i, selected_tiles: Array[Tile], 
 	
 	_grid_size = grid_size
 	
+	for x in range(_grid_size.x):
+		for y in range(_grid_size.y):
+			_all_tiles.append(_grid[x][y])
+	
 	_selected_pos = selected_pos.duplicate(true)
 	
 	for pos in _selected_pos:
@@ -74,7 +79,8 @@ func init(grid: Array[Array], grid_size: Vector2i, selected_tiles: Array[Tile], 
 	_player_count = player_count
 	
 	for tile in valid_tiles:
-		_valid_tiles.append(_grid[tile.get_grid_pos().x][tile.get_grid_pos().y])
+		var pos = tile.get_grid_pos()
+		_valid_tiles.append(_grid[pos.x][pos.y])
 	
 	_mode = mode
 	
@@ -156,9 +162,7 @@ func clone() -> GameState:
 		for y in _grid_size.y:
 			var tile = Tile.new()
 			tile.init(self, Vector2(x, y))
-			for side in _side_dirs.keys():
-				if _grid[x][y].has_wall_on_side(side):
-					tile.place_wall_on_side(side)
+			tile.set_walls(_grid[x][y].get_walls())
 			new_grid[x].append(tile)
 	
 	var selected_pos = _selected_pos.duplicate(true)
@@ -213,31 +217,85 @@ func place_counter_at_pos(pos: Vector2i) -> void:
 
 	EventBus.counter_placed.emit(tile.get_grid_pos())
 
+func path_exists(from_player: int, to_player: int) -> bool:
+	var tiles = _all_tiles.duplicate()
+	
+	var d = {}
+	#var p = {}
+	
+	for tile in tiles:
+		d[tile] = 1000
+		#p[tile] = null
+	
+	var unexplored = tiles.duplicate()
+	
+	while len(unexplored) != 0:
+		var closest = unexplored[0]
+		for tile in unexplored:
+			if d[tile] < d[closest]: closest = tile
+		
+		unexplored.erase(closest)
+		if closest == get_selected_tile(to_player):
+			return true
+		
+		for dir in _dir_sides.keys():
+			var n_pos = closest.get_grid_pos() + dir
+			if not is_pos_in_grid(n_pos): continue
+			var n = get_tile(n_pos)
+			if n not in unexplored: continue
+			if not _can_move_to_from(n_pos, closest.get_grid_pos()): continue
+			
+			var new_dist = d[closest] + 1
+			
+			if new_dist < d[closest]:
+				d[n] = new_dist
+				#p[n] = closest
+	
+	return false
+
 func calculate_scores() -> void:
+	#if not path_exists(_player, -_player + 1): return
+	
 	var shapes = []
 	
 	for player in range(get_player_count()):
 		var tile = get_selected_tile(player)
-		var tile_in_shape = false
-		for shape in shapes:
-			if tile in shape: tile_in_shape = true
+		#var tile_in_shape = false
+		#for shape in shapes:
+			#if tile in shape: tile_in_shape = true
+		#
+		#if tile_in_shape:
+			#continue
 		
-		if tile_in_shape:
-			continue
-		
-		var shape = [ tile ]
-		var checked = []
+		#var shape = [ tile ]
+		var shape = { tile: null }
+		#var checked = []
+		var checked = {}
 	
 		for from_tile in shape:
 			if from_tile in checked: continue
-			checked.append(from_tile)
+			#checked.append(from_tile)
+			checked[from_tile] = null
 			for dir in _dir_sides.keys():
 				var to_pos = from_tile.get_grid_pos() + dir
+				if not _can_move_to_from(to_pos, from_tile.get_grid_pos()): continue
+				if get_selected_pos(-player + 1) == to_pos:
+					_score = []
+					return
+				
+				var to = get_tile(to_pos)
+				
 				if not is_pos_in_grid(to_pos): continue
-				if get_tile(to_pos) in shape: continue
-				if _can_move_to_from(to_pos, from_tile.get_grid_pos()):
-					shape.append(get_tile(to_pos))
+				if to in shape: continue
+				#shape.append(get_tile(to_pos))
+				shape[to] = null
 	
+		if len(shape) > _grid_size.x * _grid_size.y / 2:
+			_score = [0, 0]
+			_score[player] = 48
+			_score[-player + 1] = 1
+			return
+		
 		shapes.append(shape)
 	
 	_score = []
@@ -276,22 +334,22 @@ func set_place_mode(mode: int) -> void:
 			EventBus.mode_changed.emit(MODE_WALL)
 
 func _can_move_to_from(to_pos: Vector2i, from_pos: Vector2i) -> bool:
+	if to_pos == from_pos: return true
+	if not is_pos_in_grid(to_pos): return false
+	if not is_pos_in_grid(from_pos): return false
+	
 	var dir = to_pos - from_pos
-	if dir.length() > 1: return false
-	if to_pos.x > _grid_size.x - 1 or to_pos.y > _grid_size.y - 1: return false
-	if to_pos.x < 0 or to_pos.y < 0: return false
-	if from_pos.x > _grid_size.x - 1 or from_pos.y > _grid_size.y - 1: return false
-	if from_pos.x < 0 or from_pos.y < 0: return false
-	
-	var to = get_tile(to_pos)
-	
-	#if to in _selected_tiles and not to == _selected_tiles[_player]: return false
-	
-	var from = get_tile(from_pos)
+	if dir.x != 0 and dir.y != 0: return false
+	if abs(dir.x) > 1 or abs(dir.y) > 1: return false
 	
 	var side = _dir_sides[dir]
 	
-	return not from.has_wall_on_side(side) and not to.has_wall_on_side(_get_opposite_side(side))
+	var to = get_tile(to_pos)
+	if to.has_wall_on_side(_get_opposite_side(side)): return false
+	
+	var from = get_tile(from_pos)
+	
+	return not from.has_wall_on_side(side)
 
 func find_valid_tiles() -> void:
 	if not get_player_selected_tile(): return
@@ -299,21 +357,39 @@ func find_valid_tiles() -> void:
 	add_valid_tile(get_player_selected_tile())
 	
 	var new_valid_tiles: Array[Tile] = []
-	var checked = []
 	
-	for i in range(2):
-		for from_tile in get_valid_tiles():
-			if from_tile in checked: continue
-			checked.append(from_tile)
-			for dir in _dir_sides.keys():
-				var to_pos = from_tile.get_grid_pos() + dir
-				if _can_move_to_from(to_pos, from_tile.get_grid_pos()):
-					var to = get_tile(to_pos)
-					if to in new_valid_tiles: continue
-					
-					if not tile_selected(to) or to == get_player_selected_tile():
-						new_valid_tiles.append(to)
-		set_valid_tiles(new_valid_tiles)
+	var player_pos = get_player_selected_pos()
+	var check_valid = Main._valid_from_pos[player_pos]
+	var checked = {}
+	
+	for pos in check_valid:
+		if _can_move_to_from(pos, player_pos):
+			new_valid_tiles.append(_grid[pos.x][pos.y])
+			#checked.append(pos)
+			checked[pos] = null
+	
+	for pos in check_valid:
+		if pos in checked: continue
+		for tile in new_valid_tiles.duplicate():
+			if _can_move_to_from(pos, tile.get_grid_pos()):
+				new_valid_tiles.append(_grid[pos.x][pos.y])
+	
+	#var checked = []
+	#
+	#for i in range(2):
+		#for from_tile in get_valid_tiles():
+			#if from_tile in checked: continue
+			#checked.append(from_tile)
+			#for dir in _dir_sides.keys():
+				#var to_pos = from_tile.get_grid_pos() + dir
+				#if _can_move_to_from(to_pos, from_tile.get_grid_pos()):
+					#var to = get_tile(to_pos)
+					#if to in new_valid_tiles: continue
+					#
+					#if not tile_selected(to) or to == get_player_selected_tile():
+						#new_valid_tiles.append(to)
+		#set_valid_tiles(new_valid_tiles)
+	set_valid_tiles(new_valid_tiles)
 
 func get_valid_spaces(player: int) -> Array[Tile]:
 	if not get_selected_tile(player): return []

@@ -75,6 +75,9 @@ func has_wall_to_edge() -> bool:
 
 	return false
 
+func set_walls(walls: Dictionary) -> void:
+	_walls = walls.duplicate(true)
+
 func get_walls() -> Dictionary:
 	return _walls
 

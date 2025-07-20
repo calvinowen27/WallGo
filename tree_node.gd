@@ -33,7 +33,8 @@ func get_best(state: GameState) -> Action:
 	
 	for action in actions:
 		if action.key() not in _children.keys(): continue
-		var avg_score = _children[action.key()].avg_score()
+		#var avg_score = _children[action.key()].avg_score()
+		var avg_score = len(_children[action.key()]._results)
 		#print("avg score is ", avg_score)
 		if avg_score > max_score:
 			max_score = avg_score
@@ -116,7 +117,7 @@ func calculate_action_value(child: TreeNode) -> float:
 func expand(state: GameState, avail_actions: Array[Action]) -> void:
 	#print("EXPAND")
 	
-	var action = avail_actions[randi_range(0, len(avail_actions) - 1)]
+	var action = avail_actions.pick_random()
 	var new_child = TreeNode.new()
 	new_child.init(self, action.key())
 	
@@ -137,33 +138,27 @@ func rollout(state: GameState) -> void:
 		var actions = state.get_actions()
 		if len(actions) == 0: break
 		
-		var values = []
-		var player_pos = state.get_selected_pos(0)
-		#var bot_pos = state.get_selected_pos(1)
+		#var values = []
+		#var player_pos = state.get_selected_pos(0)
+		#
+		#var max = 0
+		#for action in actions:
+			#var dist1 = (player_pos - action.get_next_pos()).length()
+			#max += 2-dist1
+			#if action.is_wall_adjacent_to_tile(player_pos):
+				#max += 0.5
+			#
+			#values.append(max)
 		
-		#var closest = actions[0]
-		#var min_dist = 2
-		var max = 0
-		for action in actions:
-			var dist1 = (player_pos - action.get_next_pos()).length()
-			#var dist2 = (bot_pos - action.get_next_pos()).length()
-			max += 2-dist1
-			if action.is_wall_adjacent_to_tile(player_pos):
-				max += 0.5
-			#max += dist2
-			values.append(max)
-			#if dist < min_dist:
-				#min_dist = dist
-				#closest = action
-		
-		var action = actions[randi_range(0, len(actions) - 1)]
-		var prev = 0
-		var r = randf()*max
-		for i in range(len(values)):
-			var value = values[i]
-			if prev <= r and r < value:
-				action = actions[i]
-				break
+		var action = actions.pick_random()
+		#print("hi")
+		#var prev = 0
+		#var r = randf()*max
+		#for i in range(len(values)):
+			#var value = values[i]
+			#if prev <= r and r < value:
+				#action = actions[i]
+				#break
 		
 		state = state.clone()
 		state.try_place_counter_at_pos(action.get_next_pos())
