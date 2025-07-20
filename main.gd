@@ -76,13 +76,14 @@ func _ready() -> void:
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.counter_placed.connect(_on_counter_placed)
 	EventBus.game_over.connect(_on_game_over)
+	#EventBus.do_bot_turn.connect(_on_do_bot_turn)
 
 	$WallButtons.size = Vector2(_tile_size, _tile_size)
 
 	_game_state = GameState.new()
-	var grid = _game_state.get_grid()
-	_game_state.set_grid_size(_grid_size)
-	_game_state.set_tile_size(_tile_size)
+	var grid: Array[Array] = []
+	#_game_state.set_grid_size(_grid_size)
+	#_game_state.set_tile_size(_tile_size)
 	for x in range(_grid_size.x):
 		_tile_display_grid.append([])
 		grid.append([])
@@ -94,6 +95,10 @@ func _ready() -> void:
 			_tile_display_grid[x].append(tile_display)
 			
 			grid[x].append(tile_display.get_tile())
+	
+	var selected_tiles: Array[Tile] = []
+	var selected_pos: Array[Vector2i] = []
+	_game_state.init(grid, _grid_size, selected_tiles, selected_pos, 0, 2, [], MODE_COUNTER, _tile_size)
 	
 	for i in range(_game_state.get_player_count()):
 		_game_state.select_tile(-1, Vector2i.ZERO)
@@ -109,7 +114,8 @@ func _ready() -> void:
 	#_game_state.set_place_mode(MODE_COUNTER)
 
 func _process(_delta: float) -> void:
-	if len(_game_state.get_scores()) != 0: return # game over
+	var scores = _game_state.get_scores()
+	if len(scores) != 0 and scores[0] != 0: return # game over
 	
 	if _game_state.get_player() == 0:
 		if _game_state.get_mode() == MODE_COUNTER and Input.is_action_just_pressed("click"):
@@ -119,26 +125,14 @@ func _process(_delta: float) -> void:
 			_game_state.try_place_counter_at_pos(idx)
 			
 			_game_state.calculate_scores()
-			if len(_game_state.get_scores()) != 0: EventBus.game_over.emit()
-	else:
-		var t = TreeNode.new()
-		t.init()
-		
-		for i in range(50):
-			var sample_state = _game_state.clone()
-			t.step(sample_state)
-		
-		var best_action = t.get_best(_game_state)
-		if not best_action:
-			print("uh oh best action is bad")
-		else:
-			#print("ok good")
-			_game_state.try_place_counter_at_pos(best_action.get_next_pos())
-			
-			if not _game_state.try_place_wall_on_side(best_action.get_wall_side()):
-				print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!place wall failed")
-		
+			if _game_state.get_scores()[0] != 0: EventBus.game_over.emit()
 		#print(_game_state.get_player_score(1))
+	else:
+		_game_state.calculate_scores()
+		if _game_state.get_scores()[0] != 0: EventBus.game_over.emit()
+		_on_do_bot_turn()
+		#_game_state.calculate_scores()
+		#if _game_state.get_scores()[0] != 0: EventBus.game_over.emit()
 
 #func _process(_delta: float) -> void:
 	#var t = TreeNode.new()
@@ -181,9 +175,11 @@ func get_grid_size() -> Vector2i:
 func _on_mode_changed(mode: int) -> void:
 	match mode:
 		MODE_COUNTER:
-			if len(_game_state.get_scores()) != 0:
+			#_game_state.calculate_scores()
+			#print("calculate")
+			var scores = _game_state.get_scores()
+			if len(scores) != 0 and _game_state.get_scores()[0] != 0:
 				EventBus.game_over.emit()
-			
 			if _game_state.get_player() != 0: return
 			
 			highlight_valid_tiles()
@@ -213,6 +209,24 @@ func _on_mode_changed(mode: int) -> void:
 				$WallButtons/WallTop.hide()
 			if selected_pos.y == _grid_size.y - 1 or selected_tile.has_wall_on_side(SIDE_BOTTOM):
 				$WallButtons/WallBottom.hide()
+
+func _on_do_bot_turn() -> void:
+	var t = TreeNode.new()
+	t.init()
+
+	for i in range(100):
+		var sample_state = _game_state.clone()
+		t.step(sample_state)
+
+	var best_action = t.get_best(_game_state)
+	if not best_action:
+		print("uh oh best action is bad")
+	else:
+		#print("ok good")
+		_game_state.try_place_counter_at_pos(best_action.get_next_pos())
+		
+		if not _game_state.try_place_wall_on_side(best_action.get_wall_side()):
+			print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!place wall failed")
 
 func highlight_valid_tiles() -> void:
 	for tile in _game_state.get_valid_tiles():
