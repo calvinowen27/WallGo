@@ -96,12 +96,11 @@ func _ready() -> void:
 			
 			grid[x].append(tile_display.get_tile())
 	
-	var selected_tiles: Array[Tile] = []
-	var selected_pos: Array[Vector2i] = []
-	_game_state.init(grid, _grid_size, selected_tiles, selected_pos, 0, 2, [], MODE_COUNTER, _tile_size)
+	var selected_pos: Array[Vector2i] = [Vector2i.ZERO, Vector2i.ZERO]
+	_game_state.init(grid, _grid_size, selected_pos, 0, 2, [], MODE_COUNTER, _tile_size)
 	
-	for i in range(_game_state.get_player_count()):
-		_game_state.select_tile(-1, Vector2i.ZERO)
+	#for i in range(_game_state.get_player_count()):
+		#_game_state.select_tile(-1, Vector2i.ZERO)
 	
 	for i in range(_game_state.get_player_count()):
 		var pos = _grid_size / 2 + Vector2i(i-2, i-2)

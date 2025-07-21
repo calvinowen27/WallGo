@@ -10,6 +10,7 @@ var _player: int = 0
 @export var _player_count: int = 2
 
 var _grid: Array[Array]
+var _empty_grid: Array[Array]
 var _all_tiles: Array[Tile]
 var _grid_size: Vector2i
 
@@ -52,7 +53,7 @@ var _adjacent_sides: Dictionary = {
 	SIDE_RIGHT: [ SIDE_RIGHT, SIDE_TOP, SIDE_BOTTOM ],
 }
 
-func init(grid: Array[Array], grid_size: Vector2i, selected_tiles: Array[Tile], selected_pos: Array[Vector2i], player: int, player_count: int, valid_tiles: Array, mode: int, tile_size: int = 16) -> void:
+func init(grid: Array[Array], grid_size: Vector2i, selected_pos: Array[Vector2i], player: int, player_count: int, valid_tiles: Array, mode: int, tile_size: int = 16) -> void:
 	#_grid = grid.duplicate(true)
 	
 	#for x in grid_size.x:
@@ -67,10 +68,12 @@ func init(grid: Array[Array], grid_size: Vector2i, selected_tiles: Array[Tile], 
 	_grid_size = grid_size
 	
 	for x in range(_grid_size.x):
+		_empty_grid.append([])
 		for y in range(_grid_size.y):
+			_empty_grid[x].append(null)
 			_all_tiles.append(_grid[x][y])
 	
-	_selected_pos = selected_pos.duplicate(true)
+	_selected_pos = selected_pos.duplicate()
 	
 	for pos in _selected_pos:
 		_selected_tiles.append(_grid[pos.x][pos.y])
@@ -156,29 +159,32 @@ func clone() -> GameState:
 	
 	#var new_grid = _grid.duplicate(true)
 	
-	var new_grid: Array[Array] = []
+	var new_grid: Array[Array] = _empty_grid
 	
 	for x in _grid_size.x:
-		new_grid.append([])
+		#new_grid.append([])
 		for y in _grid_size.y:
 			var tile = Tile.new()
 			tile.init(self, Vector2(x, y))
 			tile.set_walls(_grid[x][y].get_walls())
-			new_grid[x].append(tile)
+			new_grid[x][y] = tile
+			#new_grid[x].append(tile)
 	
-	var selected_pos = _selected_pos.duplicate(true)
-	var selected_tiles: Array[Tile] = []
+	#var selected_pos = _selected_pos.duplicate()
+	#var selected_pos = []
+	#var selected_tiles: Array[Tile] = []
 	
-	for pos in selected_pos:
-		selected_tiles.append(new_grid[pos.x][pos.y])
+	#for pos in _selected_pos:
+		#selected_pos.append(pos)
+		#selected_tiles.append(new_grid[pos.x][pos.y])
 	
-	var valid_tiles: Array[Tile] = []
+	#var valid_tiles: Array[Tile] = []
+	#
+	#for tile in _valid_tiles:
+		#var pos = tile.get_grid_pos()
+		#valid_tiles.append(new_grid[pos.x][pos.y])
 	
-	for tile in _valid_tiles:
-		var pos = tile.get_grid_pos()
-		valid_tiles.append(new_grid[pos.x][pos.y])
-	
-	new_state.init(new_grid, _grid_size, selected_tiles, selected_pos, _player, _player_count, valid_tiles, _mode, _tile_size)
+	new_state.init(new_grid, _grid_size, _selected_pos, _player, _player_count, _valid_tiles, _mode, _tile_size)
 	
 	return new_state
 
@@ -247,18 +253,30 @@ func path_exists(from_player: int, to_player: int) -> Array[Tile]:
 	
 	var shape: Array[Tile] = []
 	
+	var unexplored_sorted: Array[Tile] = [ get_selected_tile(from_player) ]
+	
 	while len(unexplored) != 0:
 		var closest = unexplored.keys()[0]
-		for tile in unexplored.keys():
-			if d[tile] < d[closest]: closest = tile
+		if len(unexplored_sorted) != 0:
+			closest = unexplored_sorted[0]
+			if closest == get_selected_tile(to_player) and d[closest] != 1000:
+				#print("reached end: ", len(shape))
+				return []
+			
+			unexplored_sorted.remove_at(0)
+			unexplored.erase(closest)
+		else:
+			for tile in unexplored.keys():
+				if d[tile] < d[closest]: closest = tile
+			
+			if closest == get_selected_tile(to_player) and d[closest] != 1000:
+				#print("reached end: ", len(shape))
+				return []
+			
+			unexplored.erase(closest)
 		
 		#print("closest distance: ", d[closest])
 		
-		if closest == get_selected_tile(to_player) and d[closest] != 1000:
-			#print("reached end: ", len(shape))
-			return []
-		
-		unexplored.erase(closest)
 		shape.append(closest)
 		
 		for dir in _dir_sides.keys():
@@ -278,6 +296,18 @@ func path_exists(from_player: int, to_player: int) -> Array[Tile]:
 			
 			if new_dist < d[n]:
 				d[n] = new_dist
+				
+				if len(unexplored_sorted) == 0:
+					unexplored_sorted.append(n)
+				else:
+					var inserted = false
+					for i in range(len(unexplored_sorted)):
+						if d[n] > d[unexplored_sorted[i]]:
+							unexplored_sorted.insert(i, n)
+							inserted = true
+							break
+					if not inserted:
+						unexplored_sorted.append(n)
 				#p[n] = closest
 	
 	#if get_selected_tile(to_player) in shape: return []
@@ -436,7 +466,7 @@ func get_valid_spaces(player: int) -> Array[Tile]:
 	if not get_selected_tile(player): return []
 	
 	var valid_tiles: Array[Tile] = [ get_selected_tile(player) ]
-	var new_valid_tiles: Array[Tile] = []
+	var new_valid_tiles = {}
 	var checked = []
 	
 	for i in range(2):
@@ -450,8 +480,8 @@ func get_valid_spaces(player: int) -> Array[Tile]:
 					if to in new_valid_tiles: continue
 					
 					if not tile_selected(to) or to == get_selected_tile(player):
-						new_valid_tiles.append(to)
-		valid_tiles = new_valid_tiles.duplicate()
+						new_valid_tiles[to] = null
+		valid_tiles = new_valid_tiles.keys()
 	
 	#print(len(valid_tiles))
 	
@@ -472,7 +502,7 @@ func get_player_score(player: int) -> float:
 	return 0
 
 func get_actions() -> Array[Action]:
-	set_valid_tiles(find_valid_tiles(_player))
+	#set_valid_tiles(find_valid_tiles(_player))
 	
 	var actions: Array[Action] = []
 	
