@@ -28,8 +28,8 @@ var _game_state: GameState
 enum {
 	SIDE_TOP,
 	SIDE_BOTTOM,
-	SIDE_RIGHT,
-	SIDE_LEFT
+	SIDE_LEFT,
+	SIDE_RIGHT
 }
 
 enum {
@@ -40,8 +40,8 @@ enum {
 var _side_dirs: Dictionary = {
 	SIDE_TOP: Vector2i(0, -1),
 	SIDE_BOTTOM: Vector2i(0, 1),
-	SIDE_RIGHT: Vector2i(1, 0),
-	SIDE_LEFT: Vector2i(-1, 0)
+	SIDE_LEFT: Vector2i(-1, 0),
+	SIDE_RIGHT: Vector2i(1, 0)
 }
 
 var _dir_sides: Dictionary = {
@@ -49,13 +49,6 @@ var _dir_sides: Dictionary = {
 	Vector2i(0, 1): SIDE_BOTTOM,
 	Vector2i(1, 0): SIDE_RIGHT,
 	Vector2i(-1, 0): SIDE_LEFT
-}
-
-var _adjacent_sides: Dictionary = {
-	SIDE_TOP: [ SIDE_TOP, SIDE_LEFT, SIDE_RIGHT ],
-	SIDE_BOTTOM: [ SIDE_BOTTOM, SIDE_LEFT, SIDE_RIGHT ],
-	SIDE_LEFT: [ SIDE_LEFT, SIDE_TOP, SIDE_BOTTOM ],
-	SIDE_RIGHT: [ SIDE_RIGHT, SIDE_TOP, SIDE_BOTTOM ],
 }
 
 static var _valid_from_pos: Dictionary = {}
@@ -75,6 +68,7 @@ func _ready() -> void:
 	
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.counter_placed.connect(_on_counter_placed)
+	EventBus.wall_placed.connect(_on_wall_placed)
 	EventBus.game_over.connect(_on_game_over)
 	#EventBus.do_bot_turn.connect(_on_do_bot_turn)
 
@@ -96,16 +90,24 @@ func _ready() -> void:
 			
 			grid[x].append(tile_display.get_tile())
 	
-	var selected_pos: Array[Vector2i] = [Vector2i.ZERO, Vector2i.ZERO]
-	_game_state.init(grid, _grid_size, selected_pos, 0, 2, [], MODE_COUNTER, _tile_size)
+	#var selected_pos: Array[Vector2i] = [Vector2i(1, 3), Vector2i(5, 3)]
+	_game_state.init({}, _grid_size)
+	_game_state.try_place_counter_at_pos(Vector2i(1, 3))
+	_game_state.next_player()
+	#_game_state.set_place_mode(_game_state.PLACE_MODE_COUNTER)
+	_game_state.try_place_counter_at_pos(Vector2i(5, 3))
+	_game_state.next_player()
+	#_game_state.set_place_mode(_game_state.PLACE_MODE_COUNTER)
+	
+	#_game_state.init(grid, _grid_size, selected_pos, 0, 2, [], MODE_COUNTER, _tile_size)
 	
 	#for i in range(_game_state.get_player_count()):
 		#_game_state.select_tile(-1, Vector2i.ZERO)
 	
-	for i in range(_game_state.get_player_count()):
-		var pos = _grid_size / 2 + Vector2i(i-2, i-2)
-		_game_state.place_counter_at_pos(pos)
-		_game_state.set_place_mode(MODE_COUNTER)
+	#for i in range(_game_state.PLAYER_COUNT):
+		#var pos = _grid_size / 2 + Vector2i(i-2, i-2)
+		#_game_state.try_place_counter_at_pos(pos)
+		#_game_state.set_place_mode(MODE_COUNTER)
 	
 	$EndText.position = _camera.position
 	
@@ -116,20 +118,20 @@ func _process(_delta: float) -> void:
 	var scores = _game_state.get_scores()
 	if len(scores) != 0 and scores[0] != 0: return # game over
 	
-	if _game_state.get_player() == 0:
-		if _game_state.get_mode() == MODE_COUNTER and Input.is_action_just_pressed("click"):
+	if _game_state.get_curr_player() == 0:
+		if _game_state.get_place_mode() == MODE_COUNTER and Input.is_action_just_pressed("click"):
 			var mouse_pos = get_global_mouse_position() + Vector2(_tile_size / 2, _tile_size / 2)
 			var idx = Vector2i(clamp(mouse_pos.x / _tile_size, 0, _grid_size.x - 1), clamp(mouse_pos.y / _tile_size, 0, _grid_size.y - 1))
 
 			_game_state.try_place_counter_at_pos(idx)
 			
 			_game_state.calculate_scores()
-			if _game_state.get_scores()[0] != 0: EventBus.game_over.emit()
+			if _game_state.get_scores()[0] != 0: EventBus.game_over.emit(_game_state)
 		#print(_game_state.get_player_score(1))
 	else:
 		_game_state.calculate_scores()
-		if _game_state.get_scores()[0] != 0: EventBus.game_over.emit()
-		_on_do_bot_turn()
+		if _game_state.get_scores()[0] != 0: EventBus.game_over.emit(_game_state)
+		_on_do_bot_turn(_game_state)
 		#_game_state.calculate_scores()
 		#if _game_state.get_scores()[0] != 0: EventBus.game_over.emit()
 
@@ -171,15 +173,17 @@ func _on_wall_top_pressed() -> void:
 func get_grid_size() -> Vector2i:
 	return _grid_size
 
-func _on_mode_changed(mode: int) -> void:
+func _on_mode_changed(state: GameState, mode: int) -> void:
+	if state != _game_state: return
+	
 	match mode:
 		MODE_COUNTER:
 			#_game_state.calculate_scores()
 			#print("calculate")
 			var scores = _game_state.get_scores()
 			if len(scores) != 0 and _game_state.get_scores()[0] != 0:
-				EventBus.game_over.emit()
-			if _game_state.get_player() != 0: return
+				EventBus.game_over.emit(_game_state)
+			if _game_state.get_curr_player() != 0: return
 			
 			highlight_valid_tiles()
 			
@@ -191,25 +195,27 @@ func _on_mode_changed(mode: int) -> void:
 			$WallButtons.hide()
 		
 		MODE_WALL:
-			if _game_state.get_player() != 0: return
+			if _game_state.get_curr_player() != 0: return
 			
 			unhighlight_tiles()
 			
 			$WallButtons.show()
 			
-			var selected_pos = _game_state.get_player_selected_pos()
-			var selected_tile = _game_state.get_player_selected_tile()
+			var selected_pos = _game_state.get_curr_player_selected_pos()
+			#var selected_tile = _game_state.get_curr_player_selected_tile()
 			
-			if selected_pos.x == 0 or _game_state.get_player_selected_tile().has_wall_on_side(SIDE_LEFT):
+			if selected_pos.x == 0 or _game_state.tile_at_pos_has_wall_on_side(selected_pos, _game_state.SIDE_LEFT):
 				$WallButtons/WallLeft.hide()
-			if selected_pos.x == _grid_size.x - 1 or selected_tile.has_wall_on_side(SIDE_RIGHT):
+			if selected_pos.x == _grid_size.x - 1 or _game_state.tile_at_pos_has_wall_on_side(selected_pos, _game_state.SIDE_RIGHT):
 				$WallButtons/WallRight.hide()
-			if selected_pos.y == 0 or selected_tile.has_wall_on_side(SIDE_TOP):
+			if selected_pos.y == 0 or _game_state.tile_at_pos_has_wall_on_side(selected_pos, _game_state.SIDE_TOP):
 				$WallButtons/WallTop.hide()
-			if selected_pos.y == _grid_size.y - 1 or selected_tile.has_wall_on_side(SIDE_BOTTOM):
+			if selected_pos.y == _grid_size.y - 1 or _game_state.tile_at_pos_has_wall_on_side(selected_pos, _game_state.SIDE_BOTTOM):
 				$WallButtons/WallBottom.hide()
 
-func _on_do_bot_turn() -> void:
+func _on_do_bot_turn(state: GameState) -> void:
+	if state != _game_state: return
+	
 	var t = TreeNode.new()
 	t.init()
 
@@ -222,23 +228,38 @@ func _on_do_bot_turn() -> void:
 		print("uh oh best action is bad")
 	else:
 		#print("ok good")
+		
 		_game_state.try_place_counter_at_pos(best_action.get_next_pos())
 		
 		if not _game_state.try_place_wall_on_side(best_action.get_wall_side()):
 			print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!place wall failed")
 
 func highlight_valid_tiles() -> void:
-	for tile in _game_state.get_valid_tiles():
-		tile.get_display().highlight()
+	for pos in _game_state.get_valid_pos():
+		_tile_display_grid[pos.x][pos.y].highlight()
+		#tile.get_display().highlight()
 
 func unhighlight_tiles() -> void:
-	for tile in _game_state.get_valid_tiles():
-		tile.get_display().unhighlight()
+	for pos in _game_state.get_valid_pos():
+		_tile_display_grid[pos.x][pos.y].unhighlight()
+		#tile.get_display().unhighlight()
 
-func _on_counter_placed(pos: Vector2) -> void:
+func _on_counter_placed(state: GameState, pos: Vector2) -> void:
+	if state != _game_state: return
+	
+	var prev_pos = _game_state.get_curr_player_prev_selected_pos()
+	_tile_display_grid[prev_pos.x][prev_pos.y].remove_counter()
+	_tile_display_grid[pos.x][pos.y].place_counter(_game_state.get_curr_player())
 	$WallButtons.position = _tile_display_grid[pos.x][pos.y].position - Vector2(_tile_size, _tile_size) / 2
 
-func _on_game_over() -> void:
+func _on_wall_placed(state: GameState, pos: Vector2i, side: int) -> void:
+	if state != _game_state: return
+	
+	_tile_display_grid[pos.x][pos.y].place_wall_on_side(side)
+
+func _on_game_over(state: GameState) -> void:
+	if state != _game_state: return
+	
 	$EndText.show()
 	var winner = 0
 	var max_score = 0

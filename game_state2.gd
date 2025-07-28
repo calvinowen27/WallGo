@@ -1,6 +1,6 @@
 extends Node
 
-class_name GameState2
+class_name GameState
 
 const PLAYER_COUNT = 2
 
@@ -27,6 +27,7 @@ enum {
 }
 
 var _selected_pos: Array[Vector2i]
+var _prev_selected_pos: Array[Vector2i]
 var _curr_player: int
 
 var _grid: Dictionary
@@ -39,17 +40,18 @@ var _place_mode: int
 var _score: Array[int]
 
 func init(grid: Dictionary, grid_size: Vector2i, selected_pos: Array[Vector2i] = [Vector2i.ZERO, Vector2i.ZERO], curr_player: int = 0, place_mode: int = PLACE_MODE_COUNTER, valid_pos: Array[Vector2i] = []) -> void:
-	_grid = grid.duplicate()
+	_grid = grid.duplicate(true)
 	_grid_size = grid_size
 	
+	_prev_selected_pos = [ Vector2i.ZERO, Vector2i.ZERO ]
 	_selected_pos = selected_pos.duplicate()
 	_curr_player = curr_player
 	
 	_place_mode = place_mode
 	_valid_pos = valid_pos.duplicate()
 
-func clone() -> GameState2:
-	var new_state = GameState2.new()
+func clone() -> GameState:
+	var new_state = GameState.new()
 	
 	new_state.init(_grid, _grid_size, _selected_pos, _curr_player, _place_mode, _valid_pos)
 	
@@ -59,7 +61,7 @@ func try_place_wall_on_side(side: int) -> bool:
 	var player_pos = get_curr_player_selected_pos()
 	
 	# check if wall on side
-	if _grid[player_pos][side]: return false
+	if player_pos in _grid and _grid[player_pos][side]: return false
 	
 	# check if on edge
 	if is_edge_on_pos_side(player_pos, side): return false
@@ -68,8 +70,24 @@ func try_place_wall_on_side(side: int) -> bool:
 	if player_pos not in _grid:
 		_grid[player_pos] = [ false, false, false, false ]
 	
+	var dir = DIRS[side]
+	var side_pos = player_pos + dir
+	if side_pos not in _grid:
+		_grid[side_pos] = [ false, false, false, false ]
+	
+	var opp_side = _get_opposite_side(side)
+	
+	#print("placed wall on ", side, " side at pos: ", player_pos)
+	#print("placed wall on ", opp_side, " side at pos: ", side_pos)
+	
 	# place the wall
 	_grid[player_pos][side] = true
+	
+	EventBus.wall_placed.emit(self, player_pos, side)
+	
+	_grid[side_pos][opp_side] = true
+	
+	EventBus.wall_placed.emit(self, side_pos, opp_side)
 	
 	calculate_scores()
 	
@@ -80,13 +98,16 @@ func try_place_wall_on_side(side: int) -> bool:
 func try_place_counter_at_pos(pos: Vector2i) -> bool:
 	# check if pos out of grid or invalid
 	if not is_pos_in_grid(pos): return false
-	if pos not in _valid_pos: return false
+	if len(_valid_pos) != 0 and pos not in _valid_pos: return false
 	
 	# place the counter
+	_prev_selected_pos[_curr_player] = _selected_pos[_curr_player]
 	_selected_pos[_curr_player] = pos
 	
 	if pos not in _grid:
 		_grid[pos] = [ false, false, false, false ]
+	
+	EventBus.counter_placed.emit(self, pos)
 	
 	set_place_mode(PLACE_MODE_WALL)
 	
@@ -102,6 +123,12 @@ func get_selected_pos(player: int) -> Vector2i:
 func get_curr_player_selected_pos() -> Vector2i:
 	return get_selected_pos(_curr_player)
 
+func get_prev_selected_pos(player: int) -> Vector2i:
+	return _prev_selected_pos[player]
+
+func get_curr_player_prev_selected_pos() -> Vector2i:
+	return get_prev_selected_pos(_curr_player)
+
 func tile_at_pos_selected(pos: Vector2i) -> bool:
 	return pos in _selected_pos
 
@@ -110,6 +137,19 @@ func tile_at_pos_valid(pos: Vector2i) -> bool:
 
 func get_curr_player() -> int:
 	return _curr_player
+
+func get_scores() -> Array[int]:
+	return _score
+
+func get_place_mode() -> int:
+	return _place_mode
+
+func get_valid_pos() -> Array[Vector2i]:
+	return _valid_pos
+
+func tile_at_pos_has_wall_on_side(pos: Vector2i, side: int) -> bool:
+	print("pos ", pos, " has wall on side", side, ": ", pos in _grid and _grid[pos][side])
+	return pos in _grid and _grid[pos][side]
 
 func _get_opposite_side(side: int) -> int:
 	match side:
@@ -177,11 +217,10 @@ func path_exists(from_player: int, to_player: int) -> Array[Vector2i]:
 		shape.append(closest)
 		
 		for dir in DIRS:
-			var n_pos = closest.get_grid_pos() + dir
-			if not is_pos_in_grid(n_pos): continue
-			var n = n_pos
+			var n = closest + dir
+			if not is_pos_in_grid(n): continue
 			if n not in unexplored: continue
-			if not _can_move_to_from(n_pos, closest): continue
+			if not _can_move_to_from(n, closest): continue
 
 			var new_dist = d[closest] + 1
 			
@@ -207,10 +246,11 @@ func _can_move_to_from(to_pos: Vector2i, from_pos: Vector2i) -> bool:
 	if not is_pos_in_grid(to_pos): return false
 	if not is_pos_in_grid(from_pos): return false
 	
-	if to_pos not in _grid: return true
-	
 	var dir = to_pos - from_pos
 	if dir.length() > 1: return false
+	
+	if to_pos not in _grid: return true
+	if from_pos not in _grid: return true
 	
 	return not _grid[from_pos][SIDE_FROM_DIR[dir]]
 
@@ -228,6 +268,30 @@ func calculate_scores() -> void:
 
 func find_valid_pos(player: int) -> Array[Vector2i]:
 	#if not get_selected_tile(player): return []
+	#_valid_pos.clear()
+	
+	#var new_valid_pos: Array[Vector2i] = []
+	#
+	#var player_pos = get_selected_pos(player)
+	#var check_valid = Main._valid_from_pos[player_pos]
+	#var checked = {}
+	#
+	#for pos in check_valid:
+		#if pos == get_selected_pos(-player + 1):
+			#checked[pos] = null
+			#continue
+		#if _can_move_to_from(pos, player_pos):
+			#new_valid_pos.append(pos)
+			##checked.append(pos)
+			#checked[pos] = null
+	#
+	#for pos in check_valid:
+		#if pos in checked: continue
+		#for tile in new_valid_pos.duplicate():
+			#if _can_move_to_from(pos, tile):
+				#new_valid_pos.append(pos)
+	
+	_valid_pos.clear()
 	
 	var new_valid_pos: Array[Vector2i] = []
 	
@@ -236,6 +300,8 @@ func find_valid_pos(player: int) -> Array[Vector2i]:
 	var checked = {}
 	
 	for pos in check_valid:
+		if pos in new_valid_pos: continue
+		
 		if _can_move_to_from(pos, player_pos):
 			new_valid_pos.append(pos)
 			continue
@@ -244,9 +310,32 @@ func find_valid_pos(player: int) -> Array[Vector2i]:
 			var n = player_pos + dir
 			if _can_move_to_from(n, player_pos) and _can_move_to_from(pos, n):
 				new_valid_pos.append(pos)
-				continue
+				break
 	
 	return new_valid_pos
+
+func get_player_score(player: int) -> float:
+	calculate_scores()
+	if _score[player] > _score[-player + 1]: return 1
+	return 0
+
+func get_actions() -> Array[Action]:
+	var actions: Array[Action] = []
+	
+	for pos in _valid_pos:
+		for side in SIDES:
+			if pos in _grid and _grid[pos][side]: continue
+			if is_edge_on_pos_side(pos, side): continue
+			
+			var action = Action.new()
+			
+			action.init(pos, side)
+			actions.append(action)
+	
+	return actions
+
+func ended() -> bool:
+	return len(_score) != 0 and _score[0] != 0
 
 # ========== #
 #	SETTERS  #
@@ -259,10 +348,10 @@ func set_place_mode(mode: int) -> void:
 		PLACE_MODE_COUNTER:
 			_valid_pos = find_valid_pos(_curr_player)
 			
-			EventBus.mode_changed.emit(PLACE_MODE_COUNTER)
+			EventBus.mode_changed.emit(self, PLACE_MODE_COUNTER)
 			
 		PLACE_MODE_WALL:
-			EventBus.mode_changed.emit(PLACE_MODE_WALL)
+			EventBus.mode_changed.emit(self, PLACE_MODE_WALL)
 
 func select_tile(player: int, pos: Vector2i) -> void:
 	_selected_pos[player] = pos
@@ -272,6 +361,8 @@ func select_curr_player_tile(pos: Vector2i) -> void:
 
 func next_player() -> int:
 	_curr_player = (_curr_player + 1) % PLAYER_COUNT
+	
+	_valid_pos.clear()
 	
 	set_place_mode(PLACE_MODE_COUNTER)
 	

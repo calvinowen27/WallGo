@@ -1,6 +1,7 @@
 extends Node
 
-signal mode_changed(mode: int)
-signal counter_placed(pos: Vector2)
-signal game_over
-signal do_bot_turn
+signal mode_changed(state: GameState, mode: int)
+signal counter_placed(state: GameState, pos: Vector2)
+signal wall_placed(state: GameState, side: int)
+signal game_over(state: GameState)
+signal do_bot_turn(state: GameState)

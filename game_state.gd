@@ -1,6 +1,6 @@
 extends Node
 
-class_name GameState
+class_name GameState2
 
 var _tile_size: float = 16
 
@@ -154,8 +154,8 @@ func get_valid_tiles() -> Array[Tile]:
 func set_valid_tiles(new_valid_tiles: Array[Tile]) -> void:
 	_valid_tiles = new_valid_tiles.duplicate()
 
-func clone() -> GameState:
-	var new_state = GameState.new()
+func clone() -> GameState2:
+	var new_state = GameState2.new()
 	
 	#var new_grid = _grid.duplicate(true)
 	

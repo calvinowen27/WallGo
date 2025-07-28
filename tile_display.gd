@@ -7,8 +7,8 @@ var _tile: Tile
 enum {
 	SIDE_TOP,
 	SIDE_BOTTOM,
-	SIDE_RIGHT,
-	SIDE_LEFT
+	SIDE_LEFT,
+	SIDE_RIGHT
 }
 
 func init(controller, pos: Vector2, tile_size: float) -> void:
