@@ -9,12 +9,15 @@ var _results: Array[float]
 
 var _action: Action
 
+var _score = []
+
 func init(parent: TreeNode = null, key: String = "") -> void:
 	_parent = parent
 	
 	_children = {}
 
 func avg_score() -> float:
+	#return len(_results)
 	var sum = 0
 	for result in _results:
 		sum += result
@@ -33,9 +36,9 @@ func get_best(state: GameState) -> Action:
 	
 	for action in actions:
 		if action.key() not in _children.keys(): continue
-		#var avg_score = _children[action.key()].avg_score()
-		var avg_score = len(_children[action.key()]._results)
-		#print("avg score is ", avg_score)
+		var avg_score = _children[action.key()].avg_score()
+		#var avg_score = len(_children[action.key()]._results)
+		print("action score is ", avg_score)
 		if avg_score > max_score:
 			max_score = avg_score
 			best = action
@@ -76,42 +79,42 @@ func select(state: GameState) -> void:
 
 func select_action(actions: Array[Action]) -> Action:
 	#print("``````````````````````SELECT ACTION")
-	#var values = []
+	var values = []
 	var max = 0
 	var best = actions[0]
 	
 	for action in actions:
 		var value = calculate_action_value(_children[action.key()])
-		#values.append(max+value)
-		#max += value
-		if value > max:
-			max = value
-			best = action
+		max += value
+		values.append(max)
+		#if value > max:
+			#max = value
+			#best = action
 		#print(max)
 	
-	return best
+	#return best
 	
-	#for value in values:
-		#value /= max
+	for value in values:
+		value /= max
 		#print(value)
 	
-	#var r = randf()*max
+	var r = randf()*max
 	#print("r: ", r)
-	#var prev = 0
-	#for i in range(len(values)):
-		#if prev >= r and r < values[i]:
+	var prev = 0
+	for i in range(len(values)):
+		if prev >= r and r < values[i]:
 			#print("here 1")
 			#print("r: ", r, ", value: ", values[i])
-			#return actions[i]
-		#prev += values[i]
+			return actions[i]
+		prev += values[i]
 	
 	#print("here 2")
-	#return actions[-1]
+	return actions[-1]
 
 func calculate_action_value(child: TreeNode) -> float:
 	#print("CALC ACTION VALUE")
 	var score = avg_score()
-	var value = score + 0.141 * sqrt(log(len(_results)) / len(child._results))
+	var value = score + 1.414 * sqrt(log(len(_results)) / len(child._results))
 	return value
 
 func expand(state: GameState, avail_actions: Array[Action]) -> void:
@@ -188,10 +191,11 @@ func score(state: GameState) -> float:
 		#print(line)
 	#print()
 	
-	var score = state.get_player_score(1)
+	#var score = state.get_player_score(1)
+	_score = [state.get_player_score(0), state.get_player_score(1)]
 	#print(score)
 	
 	#score = score * score * score
-	score = pow(score, 3)
+	#score = pow(score, 3)
 	
-	return score
+	return _score[1]

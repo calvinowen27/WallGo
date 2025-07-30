@@ -25,6 +25,8 @@ var _selected_tiles = []
 
 var _game_state: GameState
 
+var _bot_tree: TreeNode
+
 enum {
 	SIDE_TOP,
 	SIDE_BOTTOM,
@@ -66,6 +68,9 @@ func _ready() -> void:
 	
 	_camera.position = _center
 	
+	_bot_tree = TreeNode.new()
+	_bot_tree.init()
+	
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.counter_placed.connect(_on_counter_placed)
 	EventBus.wall_placed.connect(_on_wall_placed)
@@ -75,12 +80,11 @@ func _ready() -> void:
 	$WallButtons.size = Vector2(_tile_size, _tile_size)
 
 	_game_state = GameState.new()
-	var grid: Array[Array] = []
+	var grid: Dictionary = {}
 	#_game_state.set_grid_size(_grid_size)
 	#_game_state.set_tile_size(_tile_size)
 	for x in range(_grid_size.x):
 		_tile_display_grid.append([])
-		grid.append([])
 		for y in range(_grid_size.y):
 			var tile_display = _tile_scene.instantiate()
 			tile_display.init(self, Vector2(x, y), _tile_size)
@@ -88,13 +92,14 @@ func _ready() -> void:
 			tile_display.position = Vector2(x, y) * tile_display.get_effective_size()
 			_tile_display_grid[x].append(tile_display)
 			
-			grid[x].append(tile_display.get_tile())
+			grid[Vector2i(x, y)] = [ false, false, false, false ]
 	
 	#var selected_pos: Array[Vector2i] = [Vector2i(1, 3), Vector2i(5, 3)]
 	_game_state.init({}, _grid_size)
 	_game_state.try_place_counter_at_pos(Vector2i(1, 3))
 	_game_state.next_player()
 	#_game_state.set_place_mode(_game_state.PLACE_MODE_COUNTER)
+	_game_state._valid_pos.clear()
 	_game_state.try_place_counter_at_pos(Vector2i(5, 3))
 	_game_state.next_player()
 	#_game_state.set_place_mode(_game_state.PLACE_MODE_COUNTER)
@@ -115,8 +120,9 @@ func _ready() -> void:
 	#_game_state.set_place_mode(MODE_COUNTER)
 
 func _process(_delta: float) -> void:
-	var scores = _game_state.get_scores()
-	if len(scores) != 0 and scores[0] != 0: return # game over
+	#var scores = _game_state.get_scores()
+	#if len(scores) != 0 and scores[0] != 0: return # game over
+	if $EndText.visible: return
 	
 	if _game_state.get_curr_player() == 0:
 		if _game_state.get_place_mode() == MODE_COUNTER and Input.is_action_just_pressed("click"):
@@ -216,14 +222,14 @@ func _on_mode_changed(state: GameState, mode: int) -> void:
 func _on_do_bot_turn(state: GameState) -> void:
 	if state != _game_state: return
 	
-	var t = TreeNode.new()
-	t.init()
+	#var t = TreeNode.new()
+	#t.init()
 
-	for i in range(100):
+	for i in range(1000):
 		var sample_state = _game_state.clone()
-		t.step(sample_state)
+		_bot_tree.step(sample_state)
 
-	var best_action = t.get_best(_game_state)
+	var best_action = _bot_tree.get_best(_game_state)
 	if not best_action:
 		print("uh oh best action is bad")
 	else:

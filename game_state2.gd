@@ -44,11 +44,11 @@ func init(grid: Dictionary, grid_size: Vector2i, selected_pos: Array[Vector2i] =
 	_grid_size = grid_size
 	
 	_prev_selected_pos = [ Vector2i.ZERO, Vector2i.ZERO ]
-	_selected_pos = selected_pos.duplicate()
+	_selected_pos = selected_pos.duplicate(true)
 	_curr_player = curr_player
 	
 	_place_mode = place_mode
-	_valid_pos = valid_pos.duplicate()
+	_valid_pos = valid_pos.duplicate(true)
 
 func clone() -> GameState:
 	var new_state = GameState.new()
@@ -139,6 +139,7 @@ func get_curr_player() -> int:
 	return _curr_player
 
 func get_scores() -> Array[int]:
+	#print(_score)
 	return _score
 
 func get_place_mode() -> int:
@@ -148,7 +149,7 @@ func get_valid_pos() -> Array[Vector2i]:
 	return _valid_pos
 
 func tile_at_pos_has_wall_on_side(pos: Vector2i, side: int) -> bool:
-	print("pos ", pos, " has wall on side", side, ": ", pos in _grid and _grid[pos][side])
+	#print("pos ", pos, " has wall on side", side, ": ", pos in _grid and _grid[pos][side])
 	return pos in _grid and _grid[pos][side]
 
 func _get_opposite_side(side: int) -> int:
@@ -176,70 +177,107 @@ func is_edge_on_pos_side(pos: Vector2i, side: int) -> bool:
 func is_pos_in_grid(pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.x < _grid_size.x and pos.y >= 0 and pos.y < _grid_size.y
 
-func path_exists(from_player: int, to_player: int) -> Array[Vector2i]:
+func find_shape(from_player: int, to_player: int) -> int:
 	var start_pos = get_selected_pos(from_player)
 	
 	var d = {}
 	var unexplored = {}
+	#var unexplored = []
 	
 	for x in range(_grid_size.x):
 		for y in range(_grid_size.y):
 			var pos = Vector2i(x, y)
 			d[pos] = 1000
+			#unexplored.append(pos)
 			unexplored[pos] = null
 
 	d[get_selected_pos(from_player)] = 0
 	
-	var shape: Array[Vector2i] = []
+	#var shape: Array[Vector2i] = []
+	var shape_size = 0
 	
-	var unexplored_sorted: Array[Vector2i] = [ get_selected_pos(from_player) ]
+	#var unexplored_sorted: Array[Vector2i] = [ get_selected_pos(from_player) ]
 	
-	while len(unexplored) != 0:
+	while len(unexplored.keys()) != 0:
 		var closest = unexplored.keys()[0]
-		if len(unexplored_sorted) != 0:
-			closest = unexplored_sorted[0]
-			if closest == get_selected_pos(to_player) and d[closest] != 1000:
-				#print("reached end: ", len(shape))
-				return []
-			
-			unexplored_sorted.remove_at(0)
-			unexplored.erase(closest)
-		else:
-			for tile in unexplored.keys():
-				if d[tile] < d[closest]: closest = tile
-			
-			if closest == get_selected_pos(to_player) and d[closest] != 1000:
-				#print("reached end: ", len(shape))
-				return []
-			
-			unexplored.erase(closest)
+		#if len(unexplored_sorted) != 0:
+			#closest = unexplored_sorted[0]
+			#if closest == get_selected_pos(to_player) and d[closest] != 1000:
+				##print("reached end: ", len(shape))
+				#return []
+			#
+			#unexplored_sorted.remove_at(0)
+			#unexplored.erase(closest)
+		#else:
+		for pos in unexplored.keys():
+			if d[pos] < d[closest]: closest = pos
 		
-		shape.append(closest)
+		if d[closest] == 1000: break
+		
+		if closest == get_selected_pos(to_player):
+			#print("reached end: ", len(shape))
+			return 0
+			
+		unexplored.erase(closest)
+		
+		#shape.append(closest)
+		
+		shape_size += 1
 		
 		for dir in DIRS:
 			var n = closest + dir
 			if not is_pos_in_grid(n): continue
 			if n not in unexplored: continue
 			if not _can_move_to_from(n, closest): continue
+			
+			#unexplored.append(n)
 
 			var new_dist = d[closest] + 1
 			
 			if new_dist < d[n]:
 				d[n] = new_dist
 				
-				if len(unexplored_sorted) == 0:
-					unexplored_sorted.append(n)
-				else:
-					var inserted = false
-					for i in range(len(unexplored_sorted)):
-						if d[n] > d[unexplored_sorted[i]]:
-							unexplored_sorted.insert(i, n)
-							inserted = true
-							break
-					if not inserted:
-						unexplored_sorted.append(n)
+				#if len(unexplored_sorted) == 0:
+					#unexplored_sorted.append(n)
+				#else:
+					#var inserted = false
+					#for i in range(len(unexplored_sorted)):
+						#if d[n] > d[unexplored_sorted[i]]:
+							#unexplored_sorted.insert(i, n)
+							#inserted = true
+							#break
+					#if not inserted:
+						#unexplored_sorted.append(n)
+	
+	#print("shape size ", shape_size)
+	return shape_size
 
-	return shape
+func find_shape2(from_player: int, to_player: int) -> int:
+	var start_pos = get_selected_pos(from_player)
+	var end_pos = get_selected_pos(to_player)
+	
+	var shape_size: int = 0
+	
+	var unexplored = [ start_pos ]
+	
+	while len(unexplored) != 0:
+		var curr = unexplored[0]
+		
+		unexplored.remove_at(0)
+		
+		for dir in DIRS:
+			var n = curr + dir
+			if not is_pos_in_grid(n): continue
+			if not _can_move_to_from(n, curr): continue
+			if n in unexplored: continue
+			
+			if n == end_pos: return 0
+			
+			unexplored.append(n)
+			shape_size += 1
+	
+	print(shape_size)
+	return shape_size
 
 func _can_move_to_from(to_pos: Vector2i, from_pos: Vector2i) -> bool:
 	if to_pos == from_pos: return true
@@ -255,14 +293,18 @@ func _can_move_to_from(to_pos: Vector2i, from_pos: Vector2i) -> bool:
 	return not _grid[from_pos][SIDE_FROM_DIR[dir]]
 
 func calculate_scores() -> void:
-	var shape0 = path_exists(0, 1)
-	if len(shape0) == 0:
+	var shape0_size = find_shape(0, 1)
+	if shape0_size == 0:
 		_score = [0, 0]
 		return
 	
-	var shape1 = path_exists(1, 0)
+	#print("path doesn't exist:")
+	#var shape1 = path_exists(_curr_player, -_curr_player + 1)
+	var shape1_size = find_shape(1, 0)
+	#var shape1 = path_exists(1, 0)
 	
-	_score = [len(shape0), len(shape1)]
+	_score = [shape0_size, shape1_size]
+	#print("\t", _score)
 	
 	return
 
@@ -287,8 +329,8 @@ func find_valid_pos(player: int) -> Array[Vector2i]:
 	#
 	#for pos in check_valid:
 		#if pos in checked: continue
-		#for tile in new_valid_pos.duplicate():
-			#if _can_move_to_from(pos, tile):
+		#for next_pos in new_valid_pos.duplicate():
+			#if _can_move_to_from(pos, next_pos):
 				#new_valid_pos.append(pos)
 	
 	_valid_pos.clear()
@@ -300,7 +342,7 @@ func find_valid_pos(player: int) -> Array[Vector2i]:
 	var checked = {}
 	
 	for pos in check_valid:
-		if pos in new_valid_pos: continue
+		if pos != player_pos and pos in _selected_pos: continue
 		
 		if _can_move_to_from(pos, player_pos):
 			new_valid_pos.append(pos)
@@ -308,6 +350,8 @@ func find_valid_pos(player: int) -> Array[Vector2i]:
 		
 		for dir in DIRS:
 			var n = player_pos + dir
+			if n != player_pos and n in _selected_pos: continue
+			
 			if _can_move_to_from(n, player_pos) and _can_move_to_from(pos, n):
 				new_valid_pos.append(pos)
 				break
@@ -316,10 +360,15 @@ func find_valid_pos(player: int) -> Array[Vector2i]:
 
 func get_player_score(player: int) -> float:
 	calculate_scores()
-	if _score[player] > _score[-player + 1]: return 1
+	if _score[player] > _score[-player + 1]:
+		#print("bot wins this state")
+		return 1
+	
+	#print("player wins this state")
 	return 0
 
 func get_actions() -> Array[Action]:
+	#_valid_pos = find_valid_pos(_curr_player)
 	var actions: Array[Action] = []
 	
 	for pos in _valid_pos:
