@@ -43,7 +43,14 @@ static var _valid_from_pos: Dictionary = {}
 
 func _ready() -> void:
 	for x in range(_grid_size.x):
+		_tile_display_grid.append([])
 		for y in range(_grid_size.y):
+			var tile_display = _tile_scene.instantiate()
+			tile_display.init(self, Vector2(x, y), _tile_size)
+			$Tiles.add_child(tile_display)
+			tile_display.position = Vector2(x, y) * tile_display.get_effective_size()
+			_tile_display_grid[x].append(tile_display)
+			
 			var pos = Vector2i(x, y)
 			var valid = []
 			for dx in range(-2, 3):
@@ -73,21 +80,14 @@ func _ready() -> void:
 	#_game_state.set_place_mode(MODE_COUNTER)
 
 func init() -> void:
+	$EndText.text = "Game Over"
 	$EndText.hide()
 	
 	_game_state = GameState.new()
 	var grid: Dictionary = {}
-	#_game_state.set_grid_size(_grid_size)
-	#_game_state.set_tile_size(_tile_size)
+	
 	for x in range(_grid_size.x):
-		_tile_display_grid.append([])
 		for y in range(_grid_size.y):
-			var tile_display = _tile_scene.instantiate()
-			tile_display.init(self, Vector2(x, y), _tile_size)
-			$Tiles.add_child(tile_display)
-			tile_display.position = Vector2(x, y) * tile_display.get_effective_size()
-			_tile_display_grid[x].append(tile_display)
-			
 			grid[Vector2i(x, y)] = [ false, false, false, false ]
 	
 	#var selected_pos: Array[Vector2i] = [Vector2i(1, 3), Vector2i(5, 3)]
@@ -240,10 +240,12 @@ func _on_game_over(state: GameState) -> void:
 	$EndText.text += "\nPlayer %d wins" % winner
 
 func reset() -> void:
-	#for x in range(_grid_size.x):
-		#for y in range(_grid_size.y):
-			#_tile_display_grid[x][y].unhighlight()
-			#_tile_display_grid[x][y].remove_counter()
+	for x in range(_grid_size.x):
+		for y in range(_grid_size.y):
+			var tile = _tile_display_grid[x][y]
+			tile.unhighlight()
+			tile.remove_counter()
+			tile.reset_walls()
 	
 	init()
 
