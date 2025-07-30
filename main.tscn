@@ -64,7 +64,16 @@ offset_right = 40.0
 offset_bottom = 23.0
 text = "Game Over"
 
+[node name="ResetButton" type="Button" parent="EndText"]
+layout_mode = 0
+offset_left = -5.0
+offset_top = 56.0
+offset_right = 96.0
+offset_bottom = 87.0
+text = "Reset Game"
+
 [connection signal="pressed" from="WallButtons/WallLeft" to="." method="_on_wall_left_pressed"]
 [connection signal="pressed" from="WallButtons/WallRight" to="." method="_on_wall_right_pressed"]
 [connection signal="pressed" from="WallButtons/WallBottom" to="." method="_on_wall_bottom_pressed"]
 [connection signal="pressed" from="WallButtons/WallTop" to="." method="_on_wall_top_pressed"]
+[connection signal="pressed" from="EndText/ResetButton" to="." method="_on_reset_button_pressed"]

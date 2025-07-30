@@ -10,7 +10,6 @@ class_name Main
 @onready var _camera: Camera2D = %Camera2D
 
 var _tile_display_grid: Array[Array] = []
-var _selected_tiles = []
 
 var _game_state: GameState
 
@@ -66,6 +65,16 @@ func _ready() -> void:
 
 	$WallButtons.size = Vector2(_tile_size, _tile_size)
 
+	init()
+	
+	$EndText.position = _camera.position
+	
+	#place_counter_at_pos(_grid_size / 2 + Vector2i(2, 2))
+	#_game_state.set_place_mode(MODE_COUNTER)
+
+func init() -> void:
+	$EndText.hide()
+	
 	_game_state = GameState.new()
 	var grid: Dictionary = {}
 	#_game_state.set_grid_size(_grid_size)
@@ -89,11 +98,6 @@ func _ready() -> void:
 	_game_state._valid_pos.clear()
 	_game_state.try_place_counter_at_pos(Vector2i(5, 3))
 	_game_state.next_player()
-	
-	$EndText.position = _camera.position
-	
-	#place_counter_at_pos(_grid_size / 2 + Vector2i(2, 2))
-	#_game_state.set_place_mode(MODE_COUNTER)
 
 func _process(_delta: float) -> void:
 	#var scores = _game_state.get_scores()
@@ -234,3 +238,14 @@ func _on_game_over(state: GameState) -> void:
 			winner = i
 			
 	$EndText.text += "\nPlayer %d wins" % winner
+
+func reset() -> void:
+	#for x in range(_grid_size.x):
+		#for y in range(_grid_size.y):
+			#_tile_display_grid[x][y].unhighlight()
+			#_tile_display_grid[x][y].remove_counter()
+	
+	init()
+
+func _on_reset_button_pressed() -> void:
+	reset()

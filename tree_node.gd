@@ -11,8 +11,13 @@ var _action: Action
 
 var _score = []
 
+var _depth = 0
+
 func init(parent: TreeNode = null, key: String = "") -> void:
 	_parent = parent
+	
+	if parent:
+		_depth = _parent._depth + 1
 	
 	_children = {}
 
@@ -32,7 +37,8 @@ func get_best(state: GameState) -> Action:
 	var actions = state.get_actions()
 	
 	var max_score = 0
-	var max_spaces = 0
+	#var max_spaces = 0
+	var min_depth = 1000
 	var best = actions[0]
 	
 	for action in actions:
@@ -42,13 +48,15 @@ func get_best(state: GameState) -> Action:
 		print("action score is ", avg_score)
 		if avg_score > max_score:
 			max_score = avg_score
-			max_spaces = _children[action.key()]._score[1]
+			#max_spaces = _children[action.key()]._score[1]
+			min_depth = _children[action.key()]._score[1]
 			best = action
 		elif avg_score == max_score:
-			if _children[action.key()]._score[1] > max_spaces:
+			if _children[action.key()]._score[1] < min_depth:
 				max_score = avg_score
-				print("tie breaker, ", max_spaces, " < ", _children[action.key()]._score[1])
-				max_spaces = _children[action.key()]._score[1]
+				print("tie breaker, ", min_depth, " < ", _children[action.key()]._score[1])
+				#max_spaces = _children[action.key()]._score[1]
+				min_depth = _children[action.key()]._score[1]
 				best = action
 	
 	print("best score is ", max_score)
@@ -200,6 +208,7 @@ func score(state: GameState) -> Array:
 	#_score = [state.get_player_score(0), state.get_player_score(1)]
 	#print(score)
 	_score = state.get_player_score(1)
+	_score[1] = _depth
 	#_score[0] = pow(_score[0], 3) * 0.85
 	
 	#score = score * score * score
