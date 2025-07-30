@@ -25,7 +25,7 @@ var _selected_tiles = []
 
 var _game_state: GameState
 
-var _bot_tree: TreeNode
+#var _bot_tree: TreeNode
 
 enum {
 	SIDE_TOP,
@@ -68,8 +68,8 @@ func _ready() -> void:
 	
 	_camera.position = _center
 	
-	_bot_tree = TreeNode.new()
-	_bot_tree.init()
+	#_bot_tree = TreeNode.new()
+	#_bot_tree.init()
 	
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.counter_placed.connect(_on_counter_placed)
@@ -222,14 +222,14 @@ func _on_mode_changed(state: GameState, mode: int) -> void:
 func _on_do_bot_turn(state: GameState) -> void:
 	if state != _game_state: return
 	
-	#var t = TreeNode.new()
-	#t.init()
+	var t = TreeNode.new()
+	t.init()
 
 	for i in range(1000):
 		var sample_state = _game_state.clone()
-		_bot_tree.step(sample_state)
+		t.step(sample_state)
 
-	var best_action = _bot_tree.get_best(_game_state)
+	var best_action = t.get_best(_game_state)
 	if not best_action:
 		print("uh oh best action is bad")
 	else:

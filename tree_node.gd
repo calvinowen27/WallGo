@@ -32,6 +32,7 @@ func get_best(state: GameState) -> Action:
 	var actions = state.get_actions()
 	
 	var max_score = 0
+	var max_spaces = 0
 	var best = actions[0]
 	
 	for action in actions:
@@ -41,7 +42,14 @@ func get_best(state: GameState) -> Action:
 		print("action score is ", avg_score)
 		if avg_score > max_score:
 			max_score = avg_score
+			max_spaces = _children[action.key()]._score[1]
 			best = action
+		elif avg_score == max_score:
+			if _children[action.key()]._score[1] > max_spaces:
+				max_score = avg_score
+				print("tie breaker, ", max_spaces, " < ", _children[action.key()]._score[1])
+				max_spaces = _children[action.key()]._score[1]
+				best = action
 	
 	print("best score is ", max_score)
 	print(best.key())
@@ -79,37 +87,32 @@ func select(state: GameState) -> void:
 
 func select_action(actions: Array[Action]) -> Action:
 	#print("``````````````````````SELECT ACTION")
-	var values = []
+	#var values = []
 	var max = 0
 	var best = actions[0]
 	
 	for action in actions:
 		var value = calculate_action_value(_children[action.key()])
-		max += value
-		values.append(max)
-		#if value > max:
-			#max = value
-			#best = action
+		#max += value
+		#values.append(max)
+		if value > max:
+			max = value
+			best = action
 		#print(max)
 	
-	#return best
+	return best
 	
-	for value in values:
-		value /= max
-		#print(value)
-	
-	var r = randf()*max
-	#print("r: ", r)
-	var prev = 0
-	for i in range(len(values)):
-		if prev >= r and r < values[i]:
-			#print("here 1")
-			#print("r: ", r, ", value: ", values[i])
-			return actions[i]
-		prev += values[i]
-	
-	#print("here 2")
-	return actions[-1]
+	#for value in values:
+		#value /= max
+	#
+	#var r = randf()*max
+	#var prev = 0
+	#for i in range(len(values)):
+		#if prev >= r and r < values[i]:
+			#return actions[i]
+		#prev += values[i]
+	#
+	#return actions[-1]
 
 func calculate_action_value(child: TreeNode) -> float:
 	#print("CALC ACTION VALUE")
@@ -171,14 +174,16 @@ func rollout(state: GameState) -> void:
 	
 	backpropagate(score(state))
 
-func backpropagate(result: float) -> void:
+func backpropagate(result: Array) -> void:
 	#print("BACKPROPAGATE")
 	
-	_results.append(result)
+	_results.append(result[0])
+	_score = result
+	
 	#print("appending ", result)
 	if _parent: _parent.backpropagate(result)
 
-func score(state: GameState) -> float:
+func score(state: GameState) -> Array:
 	#print("SCORE")
 	
 	#print("and score is ", state.get_player_score(1))
@@ -192,10 +197,12 @@ func score(state: GameState) -> float:
 	#print()
 	
 	#var score = state.get_player_score(1)
-	_score = [state.get_player_score(0), state.get_player_score(1)]
+	#_score = [state.get_player_score(0), state.get_player_score(1)]
 	#print(score)
+	_score = state.get_player_score(1)
+	#_score[0] = pow(_score[0], 3) * 0.85
 	
 	#score = score * score * score
-	#score = pow(score, 3)
+	#var score = pow(_score[0], 3)
 	
-	return _score[1]
+	return _score

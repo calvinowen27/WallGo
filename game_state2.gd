@@ -358,14 +358,18 @@ func find_valid_pos(player: int) -> Array[Vector2i]:
 	
 	return new_valid_pos
 
-func get_player_score(player: int) -> float:
+func get_player_score(player: int) -> Array:
 	calculate_scores()
 	if _score[player] > _score[-player + 1]:
 		#print("bot wins this state")
-		return 1
+		return [ 1, _score[player] ]
+	
+	#return _score[player] / 49
+	#return [ _score[player] / 49, _score[player] ]
+	return [ 0, _score[player] ]
 	
 	#print("player wins this state")
-	return 0
+	#return 0
 
 func get_actions() -> Array[Action]:
 	#_valid_pos = find_valid_pos(_curr_player)
