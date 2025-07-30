@@ -193,22 +193,11 @@ func find_shape(from_player: int, to_player: int) -> int:
 
 	d[get_selected_pos(from_player)] = 0
 	
-	#var shape: Array[Vector2i] = []
 	var shape_size = 0
-	
-	#var unexplored_sorted: Array[Vector2i] = [ get_selected_pos(from_player) ]
 	
 	while len(unexplored.keys()) != 0:
 		var closest = unexplored.keys()[0]
-		#if len(unexplored_sorted) != 0:
-			#closest = unexplored_sorted[0]
-			#if closest == get_selected_pos(to_player) and d[closest] != 1000:
-				##print("reached end: ", len(shape))
-				#return []
-			#
-			#unexplored_sorted.remove_at(0)
-			#unexplored.erase(closest)
-		#else:
+		
 		for pos in unexplored.keys():
 			if d[pos] < d[closest]: closest = pos
 		
@@ -237,19 +226,6 @@ func find_shape(from_player: int, to_player: int) -> int:
 			if new_dist < d[n]:
 				d[n] = new_dist
 				
-				#if len(unexplored_sorted) == 0:
-					#unexplored_sorted.append(n)
-				#else:
-					#var inserted = false
-					#for i in range(len(unexplored_sorted)):
-						#if d[n] > d[unexplored_sorted[i]]:
-							#unexplored_sorted.insert(i, n)
-							#inserted = true
-							#break
-					#if not inserted:
-						#unexplored_sorted.append(n)
-	
-	#print("shape size ", shape_size)
 	return shape_size
 
 func find_shape2(from_player: int, to_player: int) -> int:
@@ -309,32 +285,6 @@ func calculate_scores() -> void:
 	return
 
 func find_valid_pos(player: int) -> Array[Vector2i]:
-	#if not get_selected_tile(player): return []
-	#_valid_pos.clear()
-	
-	#var new_valid_pos: Array[Vector2i] = []
-	#
-	#var player_pos = get_selected_pos(player)
-	#var check_valid = Main._valid_from_pos[player_pos]
-	#var checked = {}
-	#
-	#for pos in check_valid:
-		#if pos == get_selected_pos(-player + 1):
-			#checked[pos] = null
-			#continue
-		#if _can_move_to_from(pos, player_pos):
-			#new_valid_pos.append(pos)
-			##checked.append(pos)
-			#checked[pos] = null
-	#
-	#for pos in check_valid:
-		#if pos in checked: continue
-		#for next_pos in new_valid_pos.duplicate():
-			#if _can_move_to_from(pos, next_pos):
-				#new_valid_pos.append(pos)
-	
-	_valid_pos.clear()
-	
 	var new_valid_pos: Array[Vector2i] = []
 	
 	var player_pos = get_selected_pos(player)
@@ -367,9 +317,6 @@ func get_player_score(player: int) -> Array:
 	#return _score[player] / 49
 	#return [ _score[player] / 49, _score[player] ]
 	return [ 0, _score[player] ]
-	
-	#print("player wins this state")
-	#return 0
 
 func get_actions() -> Array[Action]:
 	#_valid_pos = find_valid_pos(_curr_player)

@@ -12,20 +12,7 @@ class_name Main
 var _tile_display_grid: Array[Array] = []
 var _selected_tiles = []
 
-#var _selected_tiles: Array[Tile] = []
-#var _selected_pos: Array[Vector2i] = []
-#var _player: int = 0
-#@export var _player_count: int = 2
-#
-#var _grid: Array[Array]
-#
-#var _valid_tiles: Array
-#
-#var _mode: int = 0
-
 var _game_state: GameState
-
-#var _bot_tree: TreeNode
 
 enum {
 	SIDE_TOP,
@@ -98,21 +85,10 @@ func _ready() -> void:
 	_game_state.init({}, _grid_size)
 	_game_state.try_place_counter_at_pos(Vector2i(1, 3))
 	_game_state.next_player()
-	#_game_state.set_place_mode(_game_state.PLACE_MODE_COUNTER)
+	
 	_game_state._valid_pos.clear()
 	_game_state.try_place_counter_at_pos(Vector2i(5, 3))
 	_game_state.next_player()
-	#_game_state.set_place_mode(_game_state.PLACE_MODE_COUNTER)
-	
-	#_game_state.init(grid, _grid_size, selected_pos, 0, 2, [], MODE_COUNTER, _tile_size)
-	
-	#for i in range(_game_state.get_player_count()):
-		#_game_state.select_tile(-1, Vector2i.ZERO)
-	
-	#for i in range(_game_state.PLAYER_COUNT):
-		#var pos = _grid_size / 2 + Vector2i(i-2, i-2)
-		#_game_state.try_place_counter_at_pos(pos)
-		#_game_state.set_place_mode(MODE_COUNTER)
 	
 	$EndText.position = _camera.position
 	
@@ -140,25 +116,6 @@ func _process(_delta: float) -> void:
 		_on_do_bot_turn(_game_state)
 		#_game_state.calculate_scores()
 		#if _game_state.get_scores()[0] != 0: EventBus.game_over.emit()
-
-#func _process(_delta: float) -> void:
-	#var t = TreeNode.new()
-	#t.init()
-	#
-	#for i in range(1000):
-		#var sample_state = _game_state.clone()
-		#t.step(sample_state)
-	#
-	#var best_action = t.get_best(_game_state)
-	#if not best_action:
-		#print("uh oh best action is bad")
-	#else:
-		##print("ok good")
-		#_game_state.try_place_counter_at_pos(best_action.get_next_pos())
-		#
-		#if not _game_state.try_place_wall_on_side(best_action.get_wall_side()):
-			#print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!place wall failed")
-	
 
 func _on_wall_left_pressed() -> void:
 	_game_state.try_place_wall_on_side(SIDE_LEFT)
