@@ -76,7 +76,8 @@ func highlight() -> void:
 	self_modulate = _highlight_color
 
 func unhighlight() -> void:
-	self_modulate = Color.WHITE
+	if self_modulate == _highlight_color:
+		self_modulate = Color.WHITE
 
 func get_tile() -> Tile:
 	return _tile

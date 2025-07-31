@@ -387,8 +387,10 @@ func set_place_mode(mode: int) -> void:
 			match _board_card:
 				"lava step":
 					var pos = get_curr_player_prev_selected_pos()
-					_invalid_tiles[pos] = null
-					EventBus.invalidate_tile.emit(self, pos)
+					if pos != get_curr_player_selected_pos():
+						#print("lava stepping ", pos)
+						_invalid_tiles[pos] = null
+						EventBus.invalidate_tile.emit(self, pos)
 			
 			EventBus.mode_changed.emit(self, PLACE_MODE_WALL)
 
