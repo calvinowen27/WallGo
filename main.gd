@@ -97,6 +97,7 @@ func init() -> void:
 	$CardManager.choose_board_card()
 	$CardManager._chosen_player_cards.clear()
 	$CardManager/CardChoice.show()
+	$CardManager/ChoiceLabel.show()
 	for child in $CardManager/Cards.get_children():
 		$CardManager/Cards.remove_child(child)
 	
