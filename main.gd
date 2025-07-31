@@ -109,27 +109,37 @@ func init() -> void:
 	_game_state.try_place_counter_at_pos(Vector2i(5, 3))
 	_game_state.next_player()
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		if event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			if _game_state.get_curr_player() == 0 and _game_state.get_place_mode() == MODE_COUNTER:
+				var mouse_pos = get_global_mouse_position() + Vector2(_tile_size / 2, _tile_size / 2)
+				var idx = Vector2i(clamp(mouse_pos.x / _tile_size, 0, _grid_size.x - 1), clamp(mouse_pos.y / _tile_size, 0, _grid_size.y - 1))
+
+				_game_state.try_place_counter_at_pos(idx)
+				
+				_game_state.calculate_scores()
+				if _game_state.get_scores()[0] != 0: EventBus.game_over.emit(_game_state)
+
 func _process(_delta: float) -> void:
 	#var scores = _game_state.get_scores()
 	#if len(scores) != 0 and scores[0] != 0: return # game over
 	if $EndText.visible: return
 	
-	if _game_state.get_curr_player() == 0:
-		if _game_state.get_place_mode() == MODE_COUNTER and Input.is_action_just_pressed("click"):
-			var mouse_pos = get_global_mouse_position() + Vector2(_tile_size / 2, _tile_size / 2)
-			var idx = Vector2i(clamp(mouse_pos.x / _tile_size, 0, _grid_size.x - 1), clamp(mouse_pos.y / _tile_size, 0, _grid_size.y - 1))
-
-			_game_state.try_place_counter_at_pos(idx)
-			
-			_game_state.calculate_scores()
-			if _game_state.get_scores()[0] != 0: EventBus.game_over.emit(_game_state)
-		#print(_game_state.get_player_score(1))
-	else:
+	#if _game_state.get_curr_player() == 0:
+		#if _game_state.get_place_mode() == MODE_COUNTER and Input.is_action_just_pressed("click"):
+			#var mouse_pos = get_global_mouse_position() + Vector2(_tile_size / 2, _tile_size / 2)
+			#var idx = Vector2i(clamp(mouse_pos.x / _tile_size, 0, _grid_size.x - 1), clamp(mouse_pos.y / _tile_size, 0, _grid_size.y - 1))
+#
+			#_game_state.try_place_counter_at_pos(idx)
+			#
+			#_game_state.calculate_scores()
+			#if _game_state.get_scores()[0] != 0: EventBus.game_over.emit(_game_state)
+	#else:
+	if _game_state.get_curr_player() == 1:
 		_game_state.calculate_scores()
 		if _game_state.get_scores()[0] != 0: EventBus.game_over.emit(_game_state)
 		_on_do_bot_turn(_game_state)
-		#_game_state.calculate_scores()
-		#if _game_state.get_scores()[0] != 0: EventBus.game_over.emit()
 
 func _on_wall_left_pressed() -> void:
 	if _wall_break:

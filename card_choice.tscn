@@ -1,11 +1,37 @@
-[gd_scene load_steps=2 format=3 uid="uid://knc7b6csv2oq"]
+[gd_scene load_steps=4 format=3 uid="uid://knc7b6csv2oq"]
 
 [ext_resource type="Script" uid="uid://dwkqdkaca2a46" path="res://card_choice.gd" id="1_kikvd"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ks18o"]
+bg_color = Color(0.687215, 0.687215, 0.687215, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8lh4k"]
+bg_color = Color(0.511259, 0.511259, 0.511259, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.65218, 0.65218, 0.652179, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [node name="CardChoice" type="Button"]
 custom_minimum_size = Vector2(100, 100)
 offset_right = 55.0
 offset_bottom = 54.0
+theme_override_styles/hover = SubResource("StyleBoxFlat_ks18o")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_8lh4k")
+theme_override_styles/normal = SubResource("StyleBoxFlat_8lh4k")
 script = ExtResource("1_kikvd")
 
 [connection signal="pressed" from="." to="." method="_on_pressed"]

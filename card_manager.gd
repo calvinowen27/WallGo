@@ -1,4 +1,4 @@
-extends Node2D
+extends Control
 
 class_name CardManager
 
@@ -32,6 +32,7 @@ func choose_player_card(card: String) -> void:
 	
 	if len(_chosen_player_cards) == 2:
 		$CardChoice.hide()
+		$ChoiceLabel.hide()
 
 func use_card(card: String) -> void:
 	print("use ", card, " card")
