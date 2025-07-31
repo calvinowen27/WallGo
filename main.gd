@@ -91,6 +91,12 @@ func init() -> void:
 		for y in range(_grid_size.y):
 			grid[Vector2i(x, y)] = [ false, false, false, false ]
 	
+	$CardManager.choose_board_card()
+	$CardManager._chosen_player_cards.clear()
+	$CardManager/CardChoice.show()
+	for child in $CardManager/Cards.get_children():
+		$CardManager/Cards.remove_child(child)
+	
 	#var selected_pos: Array[Vector2i] = [Vector2i(1, 3), Vector2i(5, 3)]
 	_game_state.init({}, _grid_size)
 	_game_state.try_place_counter_at_pos(Vector2i(1, 3))
@@ -202,8 +208,8 @@ func _on_do_bot_turn(state: GameState) -> void:
 		if not _game_state.try_place_wall_on_side(best_action.get_wall_side()):
 			print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!place wall failed")
 
-func highlight_valid_tiles() -> void:
-	_game_state._valid_pos = _game_state.find_valid_pos(_game_state.get_curr_player())
+func highlight_valid_tiles(jump: bool = false) -> void:
+	_game_state._valid_pos = _game_state.find_valid_pos(_game_state.get_curr_player(), jump)
 	for pos in _game_state.get_valid_pos():
 		_tile_display_grid[pos.x][pos.y].highlight()
 		#tile.get_display().highlight()
@@ -261,7 +267,9 @@ func _on_use_card(card: String) -> void:
 		"+1 space":
 			pass
 		"wall jump":
-			pass
+			unhighlight_tiles()
+			
+			highlight_valid_tiles(true)
 		"switch places":
 			unhighlight_tiles()
 			
