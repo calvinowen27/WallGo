@@ -209,8 +209,8 @@ func _on_do_bot_turn(state: GameState) -> void:
 		if not _game_state.try_place_wall_on_side(best_action.get_wall_side()):
 			print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!place wall failed")
 
-func highlight_valid_tiles(jump: bool = false) -> void:
-	_game_state._valid_pos = _game_state.find_valid_pos(_game_state.get_curr_player(), jump)
+func highlight_valid_tiles(jump: bool = false, extra_space: bool = false) -> void:
+	_game_state._valid_pos = _game_state.find_valid_pos(_game_state.get_curr_player(), jump, extra_space)
 	for pos in _game_state.get_valid_pos():
 		_tile_display_grid[pos.x][pos.y].highlight()
 		#tile.get_display().highlight()
@@ -266,7 +266,9 @@ func _on_use_card(card: String) -> void:
 		"wall break":
 			pass
 		"+1 space":
-			pass
+			unhighlight_tiles()
+			
+			highlight_valid_tiles(false, true)
 		"wall jump":
 			unhighlight_tiles()
 			

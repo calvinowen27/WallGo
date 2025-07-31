@@ -284,7 +284,7 @@ func calculate_scores() -> void:
 	
 	return
 
-func find_valid_pos(player: int, jump: bool = false) -> Array[Vector2i]:
+func find_valid_pos(player: int, jump: bool = false, extra_space: bool = false) -> Array[Vector2i]:
 	var new_valid_pos: Array[Vector2i] = []
 	
 	var player_pos = get_selected_pos(player)
@@ -305,6 +305,17 @@ func find_valid_pos(player: int, jump: bool = false) -> Array[Vector2i]:
 			if jump or _can_move_to_from(n, player_pos) and _can_move_to_from(pos, n):
 				new_valid_pos.append(pos)
 				break
+	
+	if extra_space:
+		for pos in new_valid_pos.duplicate():
+			for dir in DIRS:
+				var n = pos + dir
+				if not is_pos_in_grid(n): continue
+				if n != player_pos and n in _selected_pos: continue
+				
+				if _can_move_to_from(n, pos):
+					new_valid_pos.append(n)
+			
 	
 	return new_valid_pos
 
