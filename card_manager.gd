@@ -5,7 +5,7 @@ class_name CardManager
 @export var _card_choice_scene: PackedScene
 @export var _card_scene: PackedScene
 
-var _board_cards = [ "flood", "acid rain", "lava step" ]
+var _board_cards = [ "flood", "acid rain", "lava step", "nothing" ]
 var _player_cards = [ "+1 space", "wall break", "switch places", "wall jump" ]
 
 var _chosen_board_card: String

@@ -116,6 +116,14 @@ offset_top = 118.0
 offset_right = 405.0
 offset_bottom = 158.0
 
+[node name="BoardCardLabel" type="Label" parent="CardManager"]
+layout_mode = 0
+offset_left = -95.0
+offset_top = -104.0
+offset_right = 1.0
+offset_bottom = -81.0
+text = "Board Card: "
+
 [connection signal="pressed" from="WallButtons/WallLeft" to="." method="_on_wall_left_pressed"]
 [connection signal="pressed" from="WallButtons/WallRight" to="." method="_on_wall_right_pressed"]
 [connection signal="pressed" from="WallButtons/WallBottom" to="." method="_on_wall_bottom_pressed"]

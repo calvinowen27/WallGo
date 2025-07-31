@@ -94,7 +94,7 @@ func init() -> void:
 			grid[Vector2i(x, y)] = [ false, false, false, false ]
 	
 	# reset card manager
-	$CardManager.choose_board_card()
+	$CardManager/BoardCardLabel.text = "Board Card: %s" % $CardManager.choose_board_card()
 	$CardManager._chosen_player_cards.clear()
 	$CardManager/CardChoice.show()
 	$CardManager/ChoiceLabel.show()
