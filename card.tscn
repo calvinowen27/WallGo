@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://dendf2bbvm7tj"]
+
+[ext_resource type="Script" uid="uid://bqf7kgw3mnysy" path="res://card.gd" id="1_kikvd"]
+
+[node name="Card" type="Button"]
+custom_minimum_size = Vector2(50, 50)
+offset_right = 8.0
+offset_bottom = 8.0
+script = ExtResource("1_kikvd")
+
+[connection signal="pressed" from="." to="." method="_on_pressed"]

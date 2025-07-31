@@ -3,6 +3,7 @@ extends Node2D
 class_name CardManager
 
 @export var _card_choice_scene: PackedScene
+@export var _card_scene: PackedScene
 
 var _board_cards = [ "flood", "acid rain", "lava step" ]
 var _player_cards = [ "+1 space", "wall break", "switch places", "wall jump" ]
@@ -24,4 +25,13 @@ func choose_player_card(card: String) -> void:
 	
 	_chosen_player_cards.append(card)
 	
-	if len(_chosen_player_cards) == 2: $CardChoice.hide()
+	var new_card = _card_scene.instantiate()
+	new_card.set_card_type(card)
+	
+	$Cards.add_child(new_card)
+	
+	if len(_chosen_player_cards) == 2:
+		$CardChoice.hide()
+
+func use_card(card: String) -> void:
+	print("use ", card, " card")

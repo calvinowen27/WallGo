@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://bckqmor3a6nl2"]
+[gd_scene load_steps=6 format=3 uid="uid://bckqmor3a6nl2"]
 
 [ext_resource type="Script" uid="uid://d1chbxb0nr0k" path="res://main.gd" id="1_6011u"]
 [ext_resource type="PackedScene" uid="uid://be07t3wys0ugv" path="res://tile.tscn" id="2_e77ha"]
 [ext_resource type="Script" uid="uid://d2hce8mts5bg8" path="res://card_manager.gd" id="3_h2yge"]
 [ext_resource type="PackedScene" uid="uid://knc7b6csv2oq" path="res://card_choice.tscn" id="4_1bvp3"]
+[ext_resource type="PackedScene" uid="uid://dendf2bbvm7tj" path="res://card.tscn" id="5_lquwl"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_6011u")
@@ -77,14 +78,17 @@ text = "Reset Game"
 [node name="CardManager" type="Node2D" parent="."]
 script = ExtResource("3_h2yge")
 _card_choice_scene = ExtResource("4_1bvp3")
+_card_scene = ExtResource("5_lquwl")
 
 [node name="CardChoice" type="HBoxContainer" parent="CardManager"]
 offset_right = 40.0
 offset_bottom = 40.0
 
-[node name="Cards" type="HBoxContainer" parent="CardManager"]
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="Cards" type="VBoxContainer" parent="CardManager"]
+offset_left = 285.0
+offset_top = 88.0
+offset_right = 325.0
+offset_bottom = 128.0
 
 [connection signal="pressed" from="WallButtons/WallLeft" to="." method="_on_wall_left_pressed"]
 [connection signal="pressed" from="WallButtons/WallRight" to="." method="_on_wall_right_pressed"]

@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://dwkqdkaca2a46" path="res://card_choice.gd" id="1_kikvd"]
 
-[node name="Card" type="Button"]
+[node name="CardChoice" type="Button"]
 custom_minimum_size = Vector2(100, 100)
 offset_right = 55.0
 offset_bottom = 54.0

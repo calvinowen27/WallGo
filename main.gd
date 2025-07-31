@@ -68,6 +68,7 @@ func _ready() -> void:
 	EventBus.counter_placed.connect(_on_counter_placed)
 	EventBus.wall_placed.connect(_on_wall_placed)
 	EventBus.game_over.connect(_on_game_over)
+	EventBus.use_card.connect(_on_use_card)
 	#EventBus.do_bot_turn.connect(_on_do_bot_turn)
 
 	$WallButtons.size = Vector2(_tile_size, _tile_size)
@@ -202,6 +203,7 @@ func _on_do_bot_turn(state: GameState) -> void:
 			print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!place wall failed")
 
 func highlight_valid_tiles() -> void:
+	_game_state._valid_pos = _game_state.find_valid_pos(_game_state.get_curr_player())
 	for pos in _game_state.get_valid_pos():
 		_tile_display_grid[pos.x][pos.y].highlight()
 		#tile.get_display().highlight()
@@ -251,3 +253,26 @@ func reset() -> void:
 
 func _on_reset_button_pressed() -> void:
 	reset()
+
+func _on_use_card(card: String) -> void:
+	match card:
+		"wall break":
+			pass
+		"+1 space":
+			pass
+		"wall jump":
+			pass
+		"switch places":
+			unhighlight_tiles()
+			
+			var pos0 = _game_state.get_selected_pos(0)
+			var pos1 = _game_state.get_selected_pos(1)
+			
+			var temp = _game_state._selected_pos[0]
+			_game_state._selected_pos[0] = _game_state._selected_pos[1]
+			_game_state._selected_pos[1] = temp
+			
+			_tile_display_grid[pos0.x][pos0.y].place_counter(1)
+			_tile_display_grid[pos1.x][pos1.y].place_counter(0)
+			
+			highlight_valid_tiles()
