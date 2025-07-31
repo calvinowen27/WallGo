@@ -46,6 +46,9 @@ func reset_walls() -> void:
 	$WallLeft.hide()
 	$WallRight.hide()
 
+func invalidate() -> void:
+	self_modulate = Color.ORANGE_RED
+
 func has_wall_on_side(side: int) -> bool:
 	return _tile.has_wall_on_side(side)
 

@@ -71,6 +71,7 @@ func _ready() -> void:
 	EventBus.wall_placed.connect(_on_wall_placed)
 	EventBus.game_over.connect(_on_game_over)
 	EventBus.use_card.connect(_on_use_card)
+	EventBus.invalidate_tile.connect(_on_tile_invalidate)
 	#EventBus.do_bot_turn.connect(_on_do_bot_turn)
 
 	$WallButtons.size = Vector2(_tile_size, _tile_size)
@@ -94,7 +95,9 @@ func init() -> void:
 			grid[Vector2i(x, y)] = [ false, false, false, false ]
 	
 	# reset card manager
-	$CardManager/BoardCardLabel.text = "Board Card: %s" % $CardManager.choose_board_card()
+	var board_card = $CardManager.choose_board_card()
+	$CardManager/BoardCardLabel.text = "Board Card: %s" % board_card
+	
 	$CardManager._chosen_player_cards.clear()
 	$CardManager/CardChoice.show()
 	$CardManager/ChoiceLabel.show()
@@ -103,12 +106,16 @@ func init() -> void:
 	
 	#var selected_pos: Array[Vector2i] = [Vector2i(1, 3), Vector2i(5, 3)]
 	_game_state.init({}, _grid_size)
+	_game_state._prev_selected_pos[0] = Vector2i(1, 3)
 	_game_state.try_place_counter_at_pos(Vector2i(1, 3))
 	_game_state.next_player()
 	
 	_game_state._valid_pos.clear()
+	_game_state._prev_selected_pos[1] = Vector2i(1, 3)
 	_game_state.try_place_counter_at_pos(Vector2i(5, 3))
 	_game_state.next_player()
+	
+	_game_state.set_board_card(board_card)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
@@ -348,3 +355,9 @@ func _on_use_card(card: String) -> void:
 			_tile_display_grid[pos1.x][pos1.y].place_counter(0)
 			
 			highlight_valid_tiles()
+
+func _on_tile_invalidate(state: GameState, pos: Vector2i) -> void:
+	if state != _game_state: return
+	
+	print("invlidate ", pos)
+	_tile_display_grid[pos.x][pos.y].invalidate()

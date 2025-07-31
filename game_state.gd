@@ -33,13 +33,17 @@ var _curr_player: int
 var _grid: Dictionary
 var _grid_size: Vector2i
 
+var _invalid_tiles: Dictionary
+
 var _valid_pos: Array[Vector2i]
 
 var _place_mode: int
 
 var _score: Array[int]
 
-func init(grid: Dictionary, grid_size: Vector2i, selected_pos: Array[Vector2i] = [Vector2i.ZERO, Vector2i.ZERO], curr_player: int = 0, place_mode: int = PLACE_MODE_COUNTER, valid_pos: Array[Vector2i] = []) -> void:
+var _board_card: String
+
+func init(grid: Dictionary, grid_size: Vector2i, selected_pos: Array[Vector2i] = [Vector2i.ZERO, Vector2i.ZERO], curr_player: int = 0, place_mode: int = PLACE_MODE_COUNTER, valid_pos: Array[Vector2i] = [], board_card: String = "") -> void:
 	_grid = grid.duplicate(true)
 	_grid_size = grid_size
 	
@@ -49,11 +53,13 @@ func init(grid: Dictionary, grid_size: Vector2i, selected_pos: Array[Vector2i] =
 	
 	_place_mode = place_mode
 	_valid_pos = valid_pos.duplicate(true)
+	
+	_board_card = board_card
 
 func clone() -> GameState:
 	var new_state = GameState.new()
 	
-	new_state.init(_grid, _grid_size, _selected_pos, _curr_player, _place_mode, _valid_pos)
+	new_state.init(_grid, _grid_size, _selected_pos, _curr_player, _place_mode, _valid_pos, _board_card)
 	
 	return new_state
 
@@ -112,6 +118,10 @@ func try_place_counter_at_pos(pos: Vector2i) -> bool:
 	set_place_mode(PLACE_MODE_WALL)
 	
 	return true
+
+func set_board_card(board_card: String) -> void:
+	_board_card = board_card
+	print("board card set to ", _board_card)
 
 # ========== #
 #	GETTERS  #
@@ -259,6 +269,7 @@ func _can_move_to_from(to_pos: Vector2i, from_pos: Vector2i) -> bool:
 	if to_pos == from_pos: return true
 	if not is_pos_in_grid(to_pos): return false
 	if not is_pos_in_grid(from_pos): return false
+	if to_pos in _invalid_tiles: return false
 	
 	var dir = to_pos - from_pos
 	if dir.length() > 1: return false
@@ -361,9 +372,24 @@ func set_place_mode(mode: int) -> void:
 		PLACE_MODE_COUNTER:
 			_valid_pos = find_valid_pos(_curr_player)
 			
+			match _board_card:
+				"flood":
+					var pos = Vector2i(randi_range(0, _grid_size.x - 1), randi_range(0, _grid_size.y - 1))
+					while pos in _selected_pos:
+						pos = Vector2i(randi_range(0, _grid_size.x - 1), randi_range(0, _grid_size.y - 1))
+					
+					_invalid_tiles[pos] = null
+					EventBus.invalidate_tile.emit(self, pos)
+			
 			EventBus.mode_changed.emit(self, PLACE_MODE_COUNTER)
 			
 		PLACE_MODE_WALL:
+			match _board_card:
+				"lava step":
+					var pos = get_curr_player_prev_selected_pos()
+					_invalid_tiles[pos] = null
+					EventBus.invalidate_tile.emit(self, pos)
+			
 			EventBus.mode_changed.emit(self, PLACE_MODE_WALL)
 
 func destroy_wall_on_side(side: int) -> void:
