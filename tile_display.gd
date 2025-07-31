@@ -33,6 +33,13 @@ func place_wall_on_side(side: int) -> void:
 		SIDE_LEFT: $WallLeft.show()
 		SIDE_RIGHT: $WallRight.show()
 
+func destroy_wall_on_side(side: int) -> void:
+	match side:
+		SIDE_TOP: $WallTop.hide()
+		SIDE_BOTTOM: $WallBottom.hide()
+		SIDE_LEFT: $WallLeft.hide()
+		SIDE_RIGHT: $WallRight.hide()
+
 func reset_walls() -> void:
 	$WallTop.hide()
 	$WallBottom.hide()

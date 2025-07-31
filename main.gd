@@ -13,6 +13,8 @@ var _tile_display_grid: Array[Array] = []
 
 var _game_state: GameState
 
+var _wall_break: bool = false
+
 enum {
 	SIDE_TOP,
 	SIDE_BOTTOM,
@@ -130,19 +132,52 @@ func _process(_delta: float) -> void:
 		#if _game_state.get_scores()[0] != 0: EventBus.game_over.emit()
 
 func _on_wall_left_pressed() -> void:
-	_game_state.try_place_wall_on_side(SIDE_LEFT)
+	if _wall_break:
+		_game_state.destroy_wall_on_side(SIDE_LEFT)
+		var pos = _game_state.get_curr_player_selected_pos()
+		_tile_display_grid[pos.x][pos.y].destroy_wall_on_side(SIDE_LEFT)
+		_tile_display_grid[pos.x - 1][pos.y].destroy_wall_on_side(SIDE_RIGHT)
+		
+		_wall_break = false
+		_game_state.set_place_mode(_game_state.get_place_mode())
+	else:
+		_game_state.try_place_wall_on_side(SIDE_LEFT)
 	#print(_game_state.get_player_score(0))
 
 func _on_wall_right_pressed() -> void:
-	_game_state.try_place_wall_on_side(SIDE_RIGHT)
+	if _wall_break:
+		_game_state.destroy_wall_on_side(SIDE_RIGHT)
+		var pos = _game_state.get_curr_player_selected_pos()
+		_tile_display_grid[pos.x][pos.y].destroy_wall_on_side(SIDE_RIGHT)
+		_tile_display_grid[pos.x + 1][pos.y].destroy_wall_on_side(SIDE_LEFT)
+		_wall_break = false
+		_game_state.set_place_mode(_game_state.get_place_mode())
+	else:
+		_game_state.try_place_wall_on_side(SIDE_RIGHT)
 	#print(_game_state.get_player_score(0))
 
 func _on_wall_bottom_pressed() -> void:
-	_game_state.try_place_wall_on_side(SIDE_BOTTOM)
+	if _wall_break:
+		_game_state.destroy_wall_on_side(SIDE_BOTTOM)
+		var pos = _game_state.get_curr_player_selected_pos()
+		_tile_display_grid[pos.x][pos.y].destroy_wall_on_side(SIDE_BOTTOM)
+		_tile_display_grid[pos.x][pos.y + 1].destroy_wall_on_side(SIDE_TOP)
+		_wall_break = false
+		_game_state.set_place_mode(_game_state.get_place_mode())
+	else:
+		_game_state.try_place_wall_on_side(SIDE_BOTTOM)
 	#print(_game_state.get_player_score(0))
 
 func _on_wall_top_pressed() -> void:
-	_game_state.try_place_wall_on_side(SIDE_TOP)
+	if _wall_break:
+		_game_state.destroy_wall_on_side(SIDE_TOP)
+		var pos = _game_state.get_curr_player_selected_pos()
+		_tile_display_grid[pos.x][pos.y].destroy_wall_on_side(SIDE_TOP)
+		_tile_display_grid[pos.x][pos.y - 1].destroy_wall_on_side(SIDE_BOTTOM)
+		_wall_break = false
+		_game_state.set_place_mode(_game_state.get_place_mode())
+	else:
+		_game_state.try_place_wall_on_side(SIDE_TOP)
 	#print(_game_state.get_player_score(0))
 
 func get_grid_size() -> Vector2i:
@@ -245,7 +280,7 @@ func _on_game_over(state: GameState) -> void:
 		if scores[i] > max_score:
 			max_score = scores[i]
 			winner = i
-			
+		
 	$EndText.text += "\nPlayer %d wins" % winner
 
 func reset() -> void:
@@ -264,7 +299,22 @@ func _on_reset_button_pressed() -> void:
 func _on_use_card(card: String) -> void:
 	match card:
 		"wall break":
-			pass
+			$WallButtons.show()
+			
+			var player_pos = _game_state.get_selected_pos(0)
+			$WallButtons.position = _tile_display_grid[player_pos.x][player_pos.y].position - Vector2(_tile_size, _tile_size) / 2
+			
+			if not _game_state.tile_at_pos_has_wall_on_side(player_pos, SIDE_LEFT):
+				$WallButtons/WallLeft.hide()
+			if not _game_state.tile_at_pos_has_wall_on_side(player_pos, SIDE_RIGHT):
+				$WallButtons/WallRight.hide()
+			if not _game_state.tile_at_pos_has_wall_on_side(player_pos, SIDE_TOP):
+				$WallButtons/WallTop.hide()
+			if not _game_state.tile_at_pos_has_wall_on_side(player_pos, SIDE_BOTTOM):
+				$WallButtons/WallBottom.hide()
+			
+			_wall_break = true
+			
 		"+1 space":
 			unhighlight_tiles()
 			

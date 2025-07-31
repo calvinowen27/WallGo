@@ -293,6 +293,7 @@ func find_valid_pos(player: int, jump: bool = false, extra_space: bool = false) 
 	
 	for pos in check_valid:
 		if pos != player_pos and pos in _selected_pos: continue
+		if not is_pos_in_grid(pos): continue
 		
 		if jump or _can_move_to_from(pos, player_pos):
 			new_valid_pos.append(pos)
@@ -301,8 +302,9 @@ func find_valid_pos(player: int, jump: bool = false, extra_space: bool = false) 
 		for dir in DIRS:
 			var n = player_pos + dir
 			if n != player_pos and n in _selected_pos: continue
+			if not is_pos_in_grid(n): continue
 			
-			if jump or _can_move_to_from(n, player_pos) and _can_move_to_from(pos, n):
+			if _can_move_to_from(n, player_pos) and _can_move_to_from(pos, n):
 				new_valid_pos.append(pos)
 				break
 	
@@ -363,6 +365,12 @@ func set_place_mode(mode: int) -> void:
 			
 		PLACE_MODE_WALL:
 			EventBus.mode_changed.emit(self, PLACE_MODE_WALL)
+
+func destroy_wall_on_side(side: int) -> void:
+	var pos = get_curr_player_selected_pos()
+	
+	_grid[pos][side] = false
+	_grid[pos + DIRS[side]][_get_opposite_side(side)] = false
 
 func select_tile(player: int, pos: Vector2i) -> void:
 	_selected_pos[player] = pos
