@@ -91,6 +91,7 @@ func init() -> void:
 		for y in range(_grid_size.y):
 			grid[Vector2i(x, y)] = [ false, false, false, false ]
 	
+	# reset card manager
 	$CardManager.choose_board_card()
 	$CardManager._chosen_player_cards.clear()
 	$CardManager/CardChoice.show()
