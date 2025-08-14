@@ -9,15 +9,15 @@ var _results: Array[float]
 
 var _action: Action
 
-var _score = []
+#var _score = []
 
-var _depth = 0
+#var _depth = 0
 
 func init(parent: TreeNode = null, key: String = "") -> void:
 	_parent = parent
 	
-	if parent:
-		_depth = _parent._depth + 1
+	#if parent:
+		#_depth = _parent._depth + 1
 	
 	_children = {}
 
@@ -38,7 +38,7 @@ func get_best(state: GameState) -> Action:
 	
 	var max_score = 0
 	#var max_spaces = 0
-	var min_depth = 1000
+	#var min_depth = 1000
 	var best = actions[0]
 	
 	for action in actions:
@@ -49,15 +49,15 @@ func get_best(state: GameState) -> Action:
 		if avg_score > max_score:
 			max_score = avg_score
 			#max_spaces = _children[action.key()]._score[1]
-			min_depth = _children[action.key()]._score[1]
+			#min_depth = _children[action.key()]._score[1]
 			best = action
-		elif avg_score == max_score:
-			if _children[action.key()]._score[1] < min_depth:
-				max_score = avg_score
-				print("tie breaker, ", min_depth, " < ", _children[action.key()]._score[1])
-				#max_spaces = _children[action.key()]._score[1]
-				min_depth = _children[action.key()]._score[1]
-				best = action
+		#elif avg_score == max_score:
+			#if _children[action.key()]._score[1] < min_depth:
+				#max_score = avg_score
+				#print("tie breaker, ", min_depth, " < ", _children[action.key()]._score[1])
+				##max_spaces = _children[action.key()]._score[1]
+				#min_depth = _children[action.key()]._score[1]
+				#best = action
 	
 	print("best score is ", max_score)
 	print(best.key())
@@ -182,16 +182,16 @@ func rollout(state: GameState) -> void:
 	
 	backpropagate(score(state))
 
-func backpropagate(result: Array) -> void:
+func backpropagate(result: int) -> void:
 	#print("BACKPROPAGATE")
 	
-	_results.append(result[0])
-	_score = result
+	_results.append(result)
+	#_score = result
 	
 	#print("appending ", result)
 	if _parent: _parent.backpropagate(result)
 
-func score(state: GameState) -> Array:
+func score(state: GameState) -> int:
 	#print("SCORE")
 	
 	#print("and score is ", state.get_player_score(1))
@@ -207,11 +207,11 @@ func score(state: GameState) -> Array:
 	#var score = state.get_player_score(1)
 	#_score = [state.get_player_score(0), state.get_player_score(1)]
 	#print(score)
-	_score = state.get_player_score(1)
-	_score[1] = _depth
+	var score = state.get_player_score(1)
+	#_score[1] = _depth
 	#_score[0] = pow(_score[0], 3) * 0.85
 	
 	#score = score * score * score
 	#var score = pow(_score[0], 3)
 	
-	return _score
+	return score

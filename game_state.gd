@@ -39,7 +39,7 @@ var _valid_pos: Array[Vector2i]
 
 var _place_mode: int
 
-var _score: Array[int]
+var _score: Array[int] = [ -1, -1 ]
 
 var _board_card: String
 
@@ -280,17 +280,26 @@ func _can_move_to_from(to_pos: Vector2i, from_pos: Vector2i) -> bool:
 	return not _grid[from_pos][SIDE_FROM_DIR[dir]]
 
 func calculate_scores() -> void:
-	var shape0_size = find_shape(0, 1)
-	if shape0_size == 0:
-		_score = [0, 0]
-		return
+	if get_selected_pos(0).x == _grid_size.x - 1:
+		_score[0] = 1
+		_score[1] = 0
+	elif get_selected_pos(1).x == 0:
+		_score[0] = 0
+		_score[1] = 1
+	else:
+		_score = [ -1, -1 ]
+	
+	#var shape0_size = find_shape(0, 1)
+	#if shape0_size == 0:
+		#_score = [0, 0]
+		#return
 	
 	#print("path doesn't exist:")
 	#var shape1 = path_exists(_curr_player, -_curr_player + 1)
-	var shape1_size = find_shape(1, 0)
+	#var shape1_size = find_shape(1, 0)
 	#var shape1 = path_exists(1, 0)
 	
-	_score = [shape0_size, shape1_size]
+	#_score = [shape0_size, shape1_size]
 	#print("\t", _score)
 	
 	return
@@ -332,15 +341,10 @@ func find_valid_pos(player: int, jump: bool = false, extra_space: bool = false) 
 	
 	return new_valid_pos
 
-func get_player_score(player: int) -> Array:
+func get_player_score(player: int) -> int:
 	calculate_scores()
-	if _score[player] > _score[-player + 1]:
-		#print("bot wins this state")
-		return [ 1, _score[player] ]
 	
-	#return _score[player] / 49
-	#return [ _score[player] / 49, _score[player] ]
-	return [ 0, _score[player] ]
+	return _score[player]
 
 func get_actions() -> Array[Action]:
 	#_valid_pos = find_valid_pos(_curr_player)
@@ -359,7 +363,7 @@ func get_actions() -> Array[Action]:
 	return actions
 
 func ended() -> bool:
-	return len(_score) != 0 and _score[0] != 0
+	return len(_score) != 0 and _score[0] != -1
 
 # ========== #
 #	SETTERS  #

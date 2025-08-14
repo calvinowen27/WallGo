@@ -106,13 +106,13 @@ func init() -> void:
 	
 	#var selected_pos: Array[Vector2i] = [Vector2i(1, 3), Vector2i(5, 3)]
 	_game_state.init({}, _grid_size)
-	_game_state._prev_selected_pos[0] = Vector2i(1, 3)
-	_game_state.try_place_counter_at_pos(Vector2i(1, 3))
+	_game_state._prev_selected_pos[0] = Vector2i(0, _grid_size.y / 2)
+	_game_state.try_place_counter_at_pos(Vector2i(0, _grid_size.y / 2))
 	_game_state.next_player()
 	
 	_game_state._valid_pos.clear()
-	_game_state._prev_selected_pos[1] = Vector2i(1, 3)
-	_game_state.try_place_counter_at_pos(Vector2i(5, 3))
+	_game_state._prev_selected_pos[1] = Vector2i(_grid_size.x - 1, _grid_size.y / 2)
+	_game_state.try_place_counter_at_pos(Vector2i(_grid_size.x - 1, _grid_size.y / 2))
 	_game_state.next_player()
 	
 	_game_state.set_board_card(board_card)
@@ -127,7 +127,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_game_state.try_place_counter_at_pos(idx)
 				
 				_game_state.calculate_scores()
-				if _game_state.get_scores()[0] != 0: EventBus.game_over.emit(_game_state)
+				if _game_state.get_scores()[0] != -1: EventBus.game_over.emit(_game_state)
 
 func _process(_delta: float) -> void:
 	#var scores = _game_state.get_scores()
@@ -146,7 +146,7 @@ func _process(_delta: float) -> void:
 	#else:
 	if _game_state.get_curr_player() == 1:
 		_game_state.calculate_scores()
-		if _game_state.get_scores()[0] != 0: EventBus.game_over.emit(_game_state)
+		if _game_state.get_scores()[0] != -1: EventBus.game_over.emit(_game_state)
 		_on_do_bot_turn(_game_state)
 
 func _on_wall_left_pressed() -> void:
@@ -209,7 +209,7 @@ func _on_mode_changed(state: GameState, mode: int) -> void:
 			#_game_state.calculate_scores()
 			#print("calculate")
 			var scores = _game_state.get_scores()
-			if len(scores) != 0 and _game_state.get_scores()[0] != 0:
+			if len(scores) != 0 and _game_state.get_scores()[0] != -1:
 				EventBus.game_over.emit(_game_state)
 			if _game_state.get_curr_player() != 0: return
 			

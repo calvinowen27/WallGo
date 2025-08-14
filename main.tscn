@@ -15,9 +15,9 @@ border_width_bottom = 2
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_6011u")
-_grid_size = Vector2i(7, 7)
+_grid_size = Vector2i(9, 9)
 _tile_scene = ExtResource("2_e77ha")
-_tile_size = 40.0
+_tile_size = 32.0
 
 [node name="Camera2D" type="Camera2D" parent="."]
 unique_name_in_owner = true
@@ -107,10 +107,12 @@ text = "pick 2"
 horizontal_alignment = 1
 
 [node name="CardChoice" type="HBoxContainer" parent="CardManager"]
+layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
 [node name="Cards" type="VBoxContainer" parent="CardManager"]
+layout_mode = 0
 offset_left = 365.0
 offset_top = 118.0
 offset_right = 405.0

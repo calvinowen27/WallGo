@@ -18,7 +18,8 @@ func _ready() -> void:
 		$CardChoice.add_child(card)
 
 func choose_board_card() -> String:
-	return "lava step"
+	#return "lava step"
+	return "nothing"
 	#return _board_cards.pick_random()
 
 func choose_player_card(card: String) -> void:
